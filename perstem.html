@@ -1,0 +1,134 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>Persian Stemmer and Morphological Analyzer</title>
+<!--<meta http-equiv="Content-Type" content="text/html; charset=utf-8"> -->
+<!-- <meta http-equiv=Content-Type content="text/html; charset=windows-1256">  -->
+</head>
+<body>
+<!-- For the 'select name="(from|to)_chars" ' values, they must
+ be numbered according to the order in which they appear in the 
+ 'orthography' file, starting with "0".
+-->
+<form action="cgi-bin/perstem.cgi" method="post" enctype="multipart/form-data">
+
+<div align="center"><b><big><big><big>Persian Stemmer</big></big></big> <br/>
+	and<br/>
+	<big>Morphological Analyzer</big><br/><br/>
+	<!--	(currently with Romanized input) -->
+</b></div> <br/>
+<br/>
+By <a href="http://home.byu.net/jmd56">Jon Dehdari</a><br/>
+<br/><br/><br/><br/>
+
+<acronym title="Note: Copying and pasting often changes the encoding type.">Input type</acronym>: &nbsp;&nbsp;&nbsp;&nbsp;
+<select name="input_type">
+	<option value="isiri3342">Isiri 3342</option>
+	<option value="0">Romanized</option>
+	<option value="unihtml" selected >Unicode HTML</option>
+	<option value="utf8">UTF-8</option>
+<!--	<option value="5">Unicode Name</option> -->
+<!--	<option value="6">Romanized Miller</option> -->
+	<option value="cp1256">Windows 1256</option>
+<!--	<option value="7">ISO 8859-6</option> -->
+<!--	<option value="8">ArabTeX</option> -->
+<!--	<option value="9">Romanized Megerdoomian</option> -->
+</select> (Try different values if the first attempt does not work) <br/><br/>
+
+Output type: &nbsp;
+<select name="output_type">
+    	<option value="arabtex">ArabTeX</option>
+	<option value="isiri3342">Isiri 3342</option>
+	<option value="0">Romanized</option>
+	<option value="unihtml" selected >Unicode HTML</option>
+	<option value="utf8">UTF-8</option>
+<!--	<option value="5">Unicode Name</option> -->
+<!--	<option value="6">Romanized Miller</option> -->
+	<option value="cp1256">Windows 1256</option>
+<!--	<option value="7">ISO 8859-6</option> -->
+<!--	<option value="9">Romanized Megerdoomian</option> -->
+</select> <br/><br/>
+
+<!-- <input name="remove_stops" type="checkbox" value="true" > Remove Stop Words <br/><br/> -->
+<input name="preserve_links" type="checkbox" value="--links" checked > Preserve Links <br/><br/>
+<input name="root_only" type="checkbox" value="--root" > Return only the root <br/><br/>
+<!-- <input name="use_web_page" type="checkbox" value="--noroman" > Use Web Page: <input name="web_page" type="text" maxlength="511" size="41" value="http://"><br/><br/> -->
+<br/>
+<input name="use_file" type="checkbox" value="true" > Upload Text File: <input name="uploaded_file" type="file" size="29">
+<br/><br/>
+
+Text:<br/>
+<textarea name="text_from" rows="10" cols="55"></textarea>
+<br/><br/>
+<input type="submit" value="Submit"><br/><br/>
+<!-- <input type="reset" value="Reset"><br/><br/> -->
+
+</form>
+
+<br/><br/>
+
+<pre>
+Roman	Unicode-Name
+______________________________________________________
+-	ZERO WIDTH NON-JOINER
+A	ARABIC LETTER ALEF
+b	ARABIC LETTER BEH
+p	ARABIC LETTER PEH 
+t	ARABIC LETTER TEH
+V	ARABIC LETTER THEH
+j	ARABIC LETTER JEEM
+c	ARABIC LETTER TCHEH
+H	ARABIC LETTER HAH
+x	ARABIC LETTER KHAH
+d	ARABIC LETTER DAL
+L	ARABIC LETTER THAL
+r	ARABIC LETTER REH
+z	ARABIC LETTER ZAIN
+J	ARABIC LETTER JEH
+s	ARABIC LETTER SEEN
+C	ARABIC LETTER SHEEN
+S	ARABIC LETTER SAD
+D	ARABIC LETTER DAD
+T	ARABIC LETTER TAH
+Z	ARABIC LETTER ZAH
+E	ARABIC LETTER AIN
+G	ARABIC LETTER GHAIN
+f	ARABIC LETTER FEH
+q	ARABIC LETTER QAF
+K	ARABIC LETTER KAF (for Arabic)
+k	ARABIC LETTER KEHEH
+g	ARABIC LETTER GAF
+l	ARABIC LETTER LAM
+m	ARABIC LETTER MEEM
+n	ARABIC LETTER NOON
+u	ARABIC LETTER WAW
+h	ARABIC LETTER HEH
+y	ARABIC LETTER YEH (for Arabic)
+i	ARABIC LETTER FARSI YEH 
+a	ARABIC FATHA
+o	ARABIC DAMMA
+e	ARABIC KASRA
+]	ARABIC LETTER ALEF WITH MADDA ABOVE
+|	ARABIC LETTER ALEF (Initial)
+M	ARABIC LETTER HAMZA
+X	ARABIC LETTER HEH WITH YEH ABOVE
+I	ARABIC LETTER YEH WITH HAMZA ABOVE
+U	ARABIC LETTER WAW WITH HAMZA ABOVE
+P	ARABIC LETTER TEH MARBUTA
+N	ARABIC FATHATAN (TANVIN)
+~	ARABIC SHADDA (TASHDID)
+,	ARABIC COMMA
+;	ARABIC SEMICOLON
+?	ARABIC QUESTION MARK
+.	FULL STOP (PERIOD)
+
+
+</pre>
+
+<a href="perstem_cgi">Source Code - CGI</a> - Depends on <a href="perstem.pl">perstem.pl</a>
+<br/><br/>
+<a href="perstem.pl">Source Code - Command-line</a>
+<br/>
+
+</body>
+</html>
