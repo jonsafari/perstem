@@ -4,24 +4,22 @@
 # Perstem:  Stemmer and Morphological Parser for Persian
 # The license is the GPL v.2 (www.fsf.org)
 # Usage:  perl perstem.pl [options] < input > output
+# Issues: "mi ", punctuation vs tokenization
 
 use strict;
-use Getopt::Long;
+#use warnings;
 #use diagnostics;
+use Getopt::Long;
 
-my $version        = "0.8.4";
-my $date           = "2006/06/28";
+my $version        = "0.9.1";
+my $date           = "2006/10/25";
 my $copyright      = "(c) 2004-2006  Jon Dehdari - GPL v2";
 my $title          = "Perstem: Persian stemmer $version, $date - $copyright";
 my ( $dont_stem, $input_type, $output_type, $no_roman, $recall, $show_links, $show_only_root, $tokenize, $unvowel, $zwnj )  = undef; 
 my $ar_chars       = "EqHSTDZLVU";
 #my $al             = "AbptVjcHxdLrzJsCSDTZEGfqkglmnuhiaoe\x5d\x7cPkMXIUN~";
 #my $longvowel     = "Aui]";
-#my @line;
-#my %resolve;
-#my @resolve;
-#my $resolve;
-#my $resolve_file   = "resolve.txt";
+my %resolve;
 
 my $usage       = <<"END_OF_USAGE";
 ${title}
@@ -46,7 +44,7 @@ Options:
   -z, --zwnj             Insert Zero Width Non-Joiners where they should be
 
 END_OF_USAGE
-#  -s, --stoplist <file>   Use stopword list <file>  (default: ./resolve.txt)
+#  -s, --stoplist <file>   Use external stopword list <file>
 
 GetOptions(
     'd|nostem'      => \$dont_stem,
@@ -64,30 +62,25 @@ GetOptions(
     'z|zwnj'        => \$zwnj,
 ) or die $usage;
 
-$input_type  =~ s/.*1256/cp1256/; # equates win1256 with cp1256
-$output_type =~ s/.*1256/cp1256/; # equates win1256 with cp1256
-$input_type  =~ tr/[A-Z]/[a-z]/;  # recognizes more enctype spellings
-$output_type =~ tr/[A-Z]/[a-z]/;  # recognizes more enctype spellings
-$input_type  =~ tr/-//;           # eg. UTF-8 & utf8
-$output_type =~ tr/-//;           # eg. UTF-8 & utf8
+$input_type  and $input_type  =~ s/.*1256/cp1256/; # equates win1256 with cp1256
+$output_type and $output_type =~ s/.*1256/cp1256/; # equates win1256 with cp1256
+$input_type  and $input_type  =~ tr/[A-Z]/[a-z]/;  # recognizes more enctype spellings
+$output_type and $output_type =~ tr/[A-Z]/[a-z]/;  # recognizes more enctype spellings
+$input_type  and $input_type  =~ tr/-//;           # eg. UTF-8 & utf8
+$output_type and $output_type =~ tr/-//;           # eg. UTF-8 & utf8
 
 
-### Ignore the following 11 lines
-## The format of the resolve.txt file is as follows:
-## 1. Mokassar: 		'ktb	ktAb'    OR    'ktb	ktAb_+PL'
-## 2. Preparsed (speed):	'krdn	kr_+dn'
-## 3. Don't stem:		'bArAn	bArAn'
-## 4. Stop word:		'u	'
-#open RESOLVE, "$resolve_file";
-#while ($resolve = <RESOLVE>) {
-#    chomp $resolve;
-#    @resolve = split /\t/, $resolve;
-#    %resolve = ( %resolve, "$resolve[0]" => "$resolve[1]" , );
-#}
+### Open Resolve section
+while (my $resolve = <DATA>) {
+    next if $resolve =~ /^#/;
+    chomp $resolve;
+    my @resolve = split /\t/, $resolve;
+    %resolve = ( %resolve, "$resolve[0]" => "$resolve[1]" , );
+}
 
 
 ### A hack for what Perl should've already done: support at runtime BOTH utf8 & other input types
-if ($input_type eq "utf8") { # UTF-8
+if ($input_type and $input_type eq "utf8") { # UTF-8
  use encoding "utf8";
  open STDIN, "<:encoding(UTF-8)" ; 
 }
@@ -96,8 +89,12 @@ else { unimport encoding "utf8";}
 
 while ($_ = <> ) {
 next if ( /^$/ | /^\s+$/ | /^#/ );  # Skips empty or commented-out lines
-chomp $_;
 $_ =~ tr/\r/\n/d; # Deletes stupid DOS carriage returns
+$_ =~ s/\n/__20__/; # Converts newlines to temporary placeholder __20__ (after \x20)
+
+@_ = split(/\s+/);
+foreach (@_) {
+
 
 
 ### Converts from native script to romanized
@@ -153,16 +150,10 @@ $_ =~ s/ hAi(?![a-zA-Z|])/-hAi/g;   # '-hA'
 $_ =~ s/h \|i(?![a-zA-Z|])/h-\|i/g; # '+h-|i'
 }
 
-#$_ =~ s/\b(?<!\])`exists($resolve[0])`\b/Eureka/g;
-#print "Resolve-line: $resolve{??}\n";
-#$_ =~ s/\b(?<!\])(??{exists($resolve{$_})})\b/eureka/g;
-##@line = split /\b(?<!\])/, $_;
-##print "LINE: @line\n";
-#if ( exists($resolve{$_})) { print "$resolve{$_}\n";}
-#else 
-#{
-
 unless ($dont_stem){ # Do stemming regexes unless $dont_stem is true
+
+if ( $resolve{$_} ) { $_ = $resolve{$_} } # word is found in Resolve section
+else {
 
 ## If these regular expressions are readable to you, you need to check-in to a psychiatric ward!
 ## If Perl 6 grammars were available to me upon starting this project, the following would look much nicer
@@ -180,7 +171,7 @@ $_ =~ s/\b(?<!\]|\|)b(?![uAi])([^ ]{2,}?(?:im|id|nd|(?<!A)m|(?<!A)i|d)(?:mAn|tAn
 $_ =~ s/(\S{2,}?(?:[^+ ]{2}d|[^+ ]{2}(?:s|f|C|x)t|\bn\+_\S{2,}?|mi\+_\S{2,}?|b\+_\S{2,}?)(?:im|id|nd|m|(?<!A|u)i|d))(CAn|tAn|C)\b/$1_+$2/g;   # Verbal Object verb enclitic
 $_ =~ s/\b(n\+_\S{2,}?|\S?mi\+_\S{2,}?|b\+_\S{2,}?)([uAi])([iI])(im|id|i)(_\+\S*)?\b/$1$2_+0$4$5/g;    # Removes epenthesized 'i/I' before Verbal Person suffixes 'im/id/i'
 $_ =~ s/\b(n\+_\S{2,}?|\S?mi\+_\S{2,}?|b\+_\S{2,}?)([uA])i(nd|d|m)(_\+\S*?)?\b/$1$2_+0$3$4/g;    # Removes epenthesized 'i' before Verbal Person suffixes 'm/d/nd'
-$_ =~ s/(\S*?(?:\S{3}(?<!A)d|\S(?:s|f|C|x)t|\bn\+_\S{2,}?|mi-?\+_\S{2,}?|\bb\+_\S{2,}?))(nd|id|im|d|(?<!A|u)i|m)(_\+\S*?)?\b/$1_+$2$3/g;    # Verbal Person verb suffix
+$_ =~ s/((?>\S*?)(?:\S{3}(?<!A)d|\S(?:s|f|C|x)t|\bn\+_\S{2,}?|mi-?\+_\S{2,}?|\bb\+_\S{2,}?))(nd|id|im|d|(?<!A|u)i|m)(_\+\S*?)?\b/$1_+$2$3/g;    # Verbal Person verb suffix
 $_ =~ s/(\S{2,}?)(?<!A)d_\+(nd|id|im|d|i|m)(_\+\S*?)?\b/$1_+d_+$2$3/g;    # Verbal tense suffix 'd'
 $_ =~ s/(\S+?)(s|f|C|x)t_\+(nd|id|im|d|i|m)(_\+\S*?)?\b/$1$2_+t_+$3$4/g;  # Verbal tense suffix 't'
 
@@ -198,10 +189,7 @@ $_ =~ s/\b(xuAh|dAr|kn|Cu|bAC)(d|nd|id|i|im|m)\b/$1_+$2/g;  # future/have - temp
 $_ =~ s/_\+d_\+\B/_+d/g;                          # temp. until resolve file works
 
 ######## Contractions ########
-$_ =~ s/\bcist\b/ch |st/g;                       # 'cheh ast'  - semicheap hack
 $_ =~ s/\b([^+ ]+?)([uAi])st(?!\s)\b/$1$2 |st/g; # normal "[uAi] ast", can't be followed by space (eg. mAst vs ...mA |st.)
-$_ =~ s/\bmrA\b/mn rA/g;                         # 'man rA'    - semicheap hack
-$_ =~ s/\btrA\b/tu rA/g;                         # 'man rA'    - semicheap hack
 
 
 ##### Noun Section #####
@@ -225,8 +213,6 @@ $_ =~ s/\b([^+ ]+?)(?<!A)gi\b/$1h_+i/g; # Adjectival suffix from stem ending in 
 $_ =~ s/\b([^+ ]+?)(i|I)i\b/$1_+i/g;    # '+i' suffix preceded by 'i' (various meanings)
 $_ =~ s/([^+ ]+?)e\b/$1_+e/g;           # An ezafe
 
-} # Ends unless ($dont_stem)
-
 ##### End #####
 
 ### Increase recall, but lower precision; also contains experimental regexes
@@ -237,8 +223,8 @@ if ( $recall ) {
  $_ =~ s/\b([^+ ]{2,}?(?:r|(?<![Ai])u|(?<![Au])i|n|m|z))d(?!\s)\b/$1_+d/g; # 3rd person singular past verb - voiced
  $_ =~ s/\b([^+ ]{2,}?(?:f|C|x|s))t(?!\s)\b/$1_+t/g;       # 3rd person singular past verb - unvoiced
 # $_ =~ s/\b(n?)([^+ ]{2,}?)((?<=r|u|i|A|n|m|z)d|(?<=f|C|x|s)t)(?!\s)\b/$1+_$2_+$3/g; # 3rd person singular past verb & neg.
-$_ =~ s/(\S{2,}?(?:[^+ ]{2}d|[^+ ]{2}(?:s|f|C|x)t|\bn\+_\S{2,}?|mi\+_\S{2,}?|b\+_\S{2,}?)(?:im|id|nd|m|(?<!A|u)i|d))mAn\b/$1_+mAn/g;   # Verbal Object verb enclitic +mAn
-$_ =~ s/\b([^+ ]{2,}?)([^uAi+ ])(mAn|C)(_\+\S*?)?\b/$1$2_+$3$4/g;     # Genitive pronominal enclitics +mAn or +C
+ $_ =~ s/(\S{2,}?(?:[^+ ]{2}d|[^+ ]{2}(?:s|f|C|x)t|\bn\+_\S{2,}?|mi\+_\S{2,}?|b\+_\S{2,}?)(?:im|id|nd|m|(?<!A|u)i|d))mAn\b/$1_+mAn/g;   # Verbal Object verb enclitic +mAn
+ $_ =~ s/\b([^+ ]{2,}?)([^uAi+ ])(mAn|C)(_\+\S*?)?\b/$1$2_+$3$4/g;     # Genitive pronominal enclitics +mAn or +C
 }
 
 ### Deletes everything but the root
@@ -248,6 +234,9 @@ if ( $show_only_root ) {
  $_ =~ s/\b[^ ]+\+_([^ ]+?)\b/$1/g;  # Removes prefixes
  $_ =~ s/\b([^ ]+?)_\+[^ ]+\b/$1/g;  # Removes suffixes
 }
+
+} # ends else -- not found in Resolve section
+} # ends unless $dont_stem
 
 ### Deletes word boundaries ' ' from morpheme links '_+'/'+_'
 unless ( $show_links ) {
@@ -305,16 +294,193 @@ if ($output_type) {
 #  $_ = $_ . '\\\\'; # Appends LaTeX newline '\\' after each line
  }  # Ends elsif (arabtex)
 
- if ($output_type eq "utf8" && $_ =~ m/[^ .\n]/)  # If utf8 & non-empty
- { binmode(STDOUT, ":utf8"); # Uses the :utf8 output layer 
-   print "$_\n";
+ if ($output_type eq "utf8" && m/[^ .\n]/) { # If utf8 & non-empty
+   binmode(STDOUT, ":utf8"); # Uses the :utf8 output layer 
+   s/__20__/\n/g && print "$_" or print "$_ ";
  }
-elsif ($_ =~ m/[^ .\n]/) {print "$_\n";} # If arabic-script line is non-empty
-} # if ($output_type)
-else { 
- if ($_ =~ m/[^ .\n]/)   {print "$_\n";} # If roman-script line is non-empty
+ elsif ( /[^ .\n]/ ) { # if arabic-script line is non-empty
+   s/__20__/\n/g && print "$_" or print "$_ ";
+ }
+} # if ($output_type) -- for non-roman input
+elsif ( /[^ .\n]/ ) { # if roman-script line is non-empty 
+    s/__20__/\n/g && print "$_" or print "$_ ";
 }
 
 
-#} # ends else
+} # ends foreach @_
 } # ends while (<>)
+
+
+### Resolve section
+## The format of the Resolve section ( __DATA__ ) is as follows:
+## 1. Mokassar (broken plurals): 	'ktb	ktAb'    OR    'ktb	ktAb_+PL'
+## 2. Preparsed (speed):		'krdn	kr_+dn'
+## 3. Don't stem (false positive):	'bArAn	bArAn'
+## 4. Stop word (delete):		'u	'
+__DATA__
+#u	
+#dr	
+#bh	
+#|z	
+#kh	
+#|in	
+#mi	
+#rA	
+#bA	
+#hA	
+#]n	
+#ik	
+#hm	
+#mn	
+#tu	
+#|u	
+#mA	
+#CmA	
+#tA	
+#digr	
+#iA	
+#|mA
+#|gr
+#hr
+#ps
+#ch
+#iki
+#hic
+#uli
+#nh
+#|st
+#hA
+#bi
+#|i
+#br
+u	u
+dr	dr
+bh	bh
+|z	|z
+kh	kh
+|in	|in
+mi	mi
+rA	rA
+bA	bA
+hA	hA
+]n	]n
+ik	ik
+hm	hm
+mn	mn
+tu	tu
+|u	|u
+mA	mA
+CmA	CmA
+tA	tA
+digr	digr
+iA	iA
+|mA	|mA
+|gr	|gr
+hr	hr
+ps	ps
+ch	ch
+iki	iki
+hic	hic
+uli	uli
+nh	nh
+|st	|st
+hA	hA
+bi	bi
+|i	|i
+br	br
+|iCAn	|iCAn
+]nhA	]nhA
+]nAn	]nAn
+bArAn	bArAn
+thrAn	thrAn
+tim	tim
+hfth	hfth
+kihAn	kihAn
+dktr	dktr
+Hti	Hti
+zndgi	zndgi
+sAzmAn	sAzmAn
+EnuAn	EnuAn
+nZAm	nZAm
+jhAn	jhAn
+pAiAn	pAiAn
+biCtr	biCtr
+miAn	miAn
+frhngi	frhngi
+tnhA	tnhA
+|ntxAbAt	|ntxAbAt
+|stfAdh	|stfAdh
+iAzdh	iAzdh
+duAzdh	duAzdh
+pAnzdh	pAnzdh
+sizdh	sizdh
+CAnzdh	CAnzdh
+nuzdh	nuzdh
+frxndh	frxndh
+]mrikA	]mrikA
+rIis	rIis
+xndh	xndh
+lndn	lndn
+mEdn	mEdn
+tmdn	tmdn
+|rdn	|rdn
+grdn	grdn
+lAdn	lAdn
+kudn	kudn
+mAdh	mAdh
+jAdh	jAdh
+|st	|st
+bud	bud
+br	br
+ktb	ktAb
+|fkAr	fkr
+|EDA	EDu
+|fGAnstAn	|fGAnstAn
+mrA	mn rA
+trA	tu rA
+cist	ch |st
+krdn	kr_+dn
+Cdh	C_+dh
+krdh	kr_+dh
+mrdm	mrd_+m
+dAdh	dA_+dh
+budh	bu_+dh
+zbAnhAi	zbAn_+hA_+e
+zbAnhA	zbAn_+hA
+budh	bu_+dh
+gLCth	gLC_+th
+budnd	bud_+nd
+dACth	dAC_+th
+krdnd	krd_+nd
+rui	ru_+e
+kCurhAi	kCur_+hA_+e
+kCurhA	kCur_+hA
+sui	su_+e
+grfth	grf_+th
+Cdn	C_+dn
+]indh	]in_+dh
+dftr	dftr
+sAxth	sAx_+th
+]mdh	]m_+dh
+rAi	rA_+e
+jAi	jA_+e
+uqt	uqt
+gLACth	gLAC_+th
+budn	bu_+dn
+didn	di_+dn
+didh	di_+dh
+dAdn	dA_+dn
+zdh	z_+dh
+zdnd	z_+d_+nd
+dAdnd	dAd_+nd
+|slAmi	|slAm_+i
+knnd	kn_+nd
+knd	kn_+d
+Cud	Cu_+d
+dhd	dh_+d
+dArd	dAr_+d
+xuAhd	xuAh_+d
+nist	n+_|st
+kjAst	kjA+_|st
+]mrikAii	]mrikA_+i
+|nsAni	|nsAn_+i
