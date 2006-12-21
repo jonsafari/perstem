@@ -11,8 +11,8 @@ use strict;
 #use diagnostics;
 use Getopt::Long;
 
-my $version        = "0.9.1";
-my $date           = "2006/10/25";
+my $version        = "0.9.2";
+my $date           = "2006/12/21";
 my $copyright      = "(c) 2004-2006  Jon Dehdari - GPL v2";
 my $title          = "Perstem: Persian stemmer $version, $date - $copyright";
 my ( $dont_stem, $input_type, $output_type, $no_roman, $recall, $show_links, $show_only_root, $tokenize, $unvowel, $zwnj )  = undef; 
@@ -89,7 +89,7 @@ else { unimport encoding "utf8";}
 
 while ($_ = <> ) {
 next if ( /^$/ | /^\s+$/ | /^#/ );  # Skips empty or commented-out lines
-$_ =~ tr/\r/\n/d; # Deletes stupid DOS carriage returns
+$_ =~ tr/\r/\n/d;   # Deletes lame DOS carriage returns
 $_ =~ s/\n/__20__/; # Converts newlines to temporary placeholder __20__ (after \x20)
 
 @_ = split(/\s+/);
@@ -104,7 +104,7 @@ if ($input_type) {
   $_ =~ s/<br>/\n/g;
   $_ =~ s/<p>/\n/g;
   $_ =~ tr/\x01-\x09\x1b-\x1f\x21-\x2d\x2f-\x5a\x5c\x5e-\x9f//d; # Deletes all chars below xa0 except: 0a,20,2e,5b,5d
-#  $_ =~ s/<\.>//g;   # Deletes all dots in HTML tags
+#  $_ =~ s/<\.>//g;  # Deletes all dots in HTML tags
 #  $_ =~ s/<.*?>//g; # Deletes all HTML tags on 1 line
 #  $_ =~ s/<.*?//g;  # Deleses 1st part of line-spanning HTML tags
 #  $_ =~ s/.*?>//g;  # Deletes 2nd part of line-spanning HTML tags

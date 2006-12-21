@@ -2,7 +2,7 @@
 # Written by Jon Dehdari 2004-2005
 # Perl 5.8
 # Stemmer and Morphological Parser for Persian
-# The license is the GPL (www.fsf.org)
+# The license is the GPL v.2 or later (www.fsf.org)
 
 # The format of the resolve.txt file is as follows:
 # 1. Mokassar: 		'ktb	ktAb'    OR    'ktb	ktAb_+PL'
