@@ -90,11 +90,10 @@ else { unimport encoding "utf8";}
 while ($_ = <> ) {
 next if ( /^$/ | /^\s+$/ | /^#/ );  # Skips empty or commented-out lines
 $_ =~ tr/\r/\n/d;   # Deletes lame DOS carriage returns
-$_ =~ s/\n/__20__/; # Converts newlines to temporary placeholder __20__ (after \x20)
+$_ =~ s/\n/==20==/; # Converts newlines to temporary placeholder ==20== (after \x20)
 
 @_ = split(/\s+/);
 foreach (@_) {
-
 
 
 ### Converts from native script to romanized
@@ -296,14 +295,14 @@ if ($output_type) {
 
  if ($output_type eq "utf8" && m/[^ .\n]/) { # If utf8 & non-empty
    binmode(STDOUT, ":utf8"); # Uses the :utf8 output layer 
-   s/__20__/\n/g && print "$_" or print "$_ ";
+   s/==20==/\n/g && print "$_" or print "$_ ";
  }
  elsif ( /[^ .\n]/ ) { # if arabic-script line is non-empty
-   s/__20__/\n/g && print "$_" or print "$_ ";
+   s/==20==/\n/g && print "$_" or print "$_ ";
  }
 } # if ($output_type) -- for non-roman input
 elsif ( /[^ .\n]/ ) { # if roman-script line is non-empty 
-    s/__20__/\n/g && print "$_" or print "$_ ";
+    s/==20==/\n/g && print "$_" or print "$_ ";
 }
 
 
