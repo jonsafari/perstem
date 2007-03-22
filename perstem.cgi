@@ -129,7 +129,7 @@ print('
 
 $text_from =~ s/(?<!\&#\w{4})[;]/ _$1_ /g; #Preserves punctuation for semicolon except for unicode decimal &#....;
 $text_from =~ s/([.,?!])/ _$1_ /g; #Preserves punctuation
-$text_from =~ s/\brm\b|passwd|shadow|\bmv\b//g; # some security stuff
+$text_from =~ s/\brm\b|passwd|shadow|\bmv\b|\bln\b|\bchmod\b|\bchown\b//g; # some security stuff
 
 
 chomp $text_from;

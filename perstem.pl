@@ -1,19 +1,19 @@
 #!/usr/bin/perl
-# Written by Jon Dehdari 2004-2006
+# Written by Jon Dehdari 2004-2007
 # Perl 5.8
 # Perstem:  Stemmer and Morphological Parser for Persian
 # The license is the GPL v.2 (www.fsf.org)
 # Usage:  perl perstem.pl [options] < input > output
-# Issues: "mi ", punctuation vs tokenization
+# Issues: punctuation vs tokenization
 
 use strict;
 #use warnings;
 #use diagnostics;
 use Getopt::Long;
 
-my $version        = "0.9.2";
-my $date           = "2006/12/21";
-my $copyright      = "(c) 2004-2006  Jon Dehdari - GPL v2";
+my $version        = "0.9.4";
+my $date           = "2007-03-22";
+my $copyright      = "(c) 2004-2007  Jon Dehdari - GPL v2";
 my $title          = "Perstem: Persian stemmer $version, $date - $copyright";
 my ( $dont_stem, $input_type, $output_type, $no_roman, $recall, $show_links, $show_only_root, $tokenize, $unvowel, $zwnj )  = undef; 
 my $ar_chars       = "EqHSTDZLVU";
@@ -90,11 +90,10 @@ else { unimport encoding "utf8";}
 while ($_ = <> ) {
 next if ( /^$/ | /^\s+$/ | /^#/ );  # Skips empty or commented-out lines
 $_ =~ tr/\r/\n/d;   # Deletes lame DOS carriage returns
-$_ =~ s/\n/==20==/; # Converts newlines to temporary placeholder ==20== (after \x20)
+$_ =~ s/\n/ ==20==/; # Converts newlines to temporary placeholder ==20== (after \x20)
 
-@_ = split(/\s+/);
+@_ = split(/(?<!mi)\s+(?!hA)/);
 foreach (@_) {
-
 
 ### Converts from native script to romanized
 if ($input_type) {
@@ -170,7 +169,7 @@ $_ =~ s/\b(?<!\]|\|)b(?![uAi])([^ ]{2,}?(?:im|id|nd|(?<!A)m|(?<!A)i|d)(?:mAn|tAn
 $_ =~ s/(\S{2,}?(?:[^+ ]{2}d|[^+ ]{2}(?:s|f|C|x)t|\bn\+_\S{2,}?|mi\+_\S{2,}?|b\+_\S{2,}?)(?:im|id|nd|m|(?<!A|u)i|d))(CAn|tAn|C)\b/$1_+$2/g;   # Verbal Object verb enclitic
 $_ =~ s/\b(n\+_\S{2,}?|\S?mi\+_\S{2,}?|b\+_\S{2,}?)([uAi])([iI])(im|id|i)(_\+\S*)?\b/$1$2_+0$4$5/g;    # Removes epenthesized 'i/I' before Verbal Person suffixes 'im/id/i'
 $_ =~ s/\b(n\+_\S{2,}?|\S?mi\+_\S{2,}?|b\+_\S{2,}?)([uA])i(nd|d|m)(_\+\S*?)?\b/$1$2_+0$3$4/g;    # Removes epenthesized 'i' before Verbal Person suffixes 'm/d/nd'
-$_ =~ s/((?>\S*?)(?:\S{3}(?<!A)d|\S(?:s|f|C|x)t|\bn\+_\S{2,}?|mi-?\+_\S{2,}?|\bb\+_\S{2,}?))(nd|id|im|d|(?<!A|u)i|m)(_\+\S*?)?\b/$1_+$2$3/g;    # Verbal Person verb suffix
+$_ =~ s/((?>\S*?)(?:\S{3}(?<!A)d|\S(?:s|f|C|x)t|mi-?\+_\S{2,}?|\bn\+_(?!mi)\S{2,}?|\bb\+_\S{2,}?))((?<!A)nd|id|im|d|(?<!A|u)i|m)(_\+\S*?)?\b/$1_+$2$3/g;    # Verbal Person verb suffix
 $_ =~ s/(\S{2,}?)(?<!A)d_\+(nd|id|im|d|i|m)(_\+\S*?)?\b/$1_+d_+$2$3/g;    # Verbal tense suffix 'd'
 $_ =~ s/(\S+?)(s|f|C|x)t_\+(nd|id|im|d|i|m)(_\+\S*?)?\b/$1$2_+t_+$3$4/g;  # Verbal tense suffix 't'
 
@@ -185,10 +184,11 @@ $_ =~ s/\b(rf|gf)t(h|n)\b/$1_+t_+$2/g;  # Short +tan verbs, eg. 'raftan/goftan' 
 $_ =~ s/\b(C|z|kr|bu|dA|ur|di|br|\]m|mr|kn|rsi|ci)d(nd|i|id|m|im)?\b/$1_+d_+$2/g;  # 'shodan/zadan...' simple past - temp. until resolve file works
 $_ =~ s/\b(rf|gf)t(nd|i|id|m|im)?\b/$1_+t_+$2/g;  # 'raftan/goftan' simple past - temp. until resolve file works
 $_ =~ s/\b(xuAh|dAr|kn|Cu|bAC)(d|nd|id|i|im|m)\b/$1_+$2/g;  # future/have - temp. until resolve file works
-$_ =~ s/_\+d_\+\B/_+d/g;                          # temp. until resolve file works
+$_ =~ s/_\+d_\+\B/_+d/g;  # temp. until resolve file works
+$_ =~ s/_\+t_\+\B/_+t/g;  # temp. until resolve file works
 
 ######## Contractions ########
-$_ =~ s/\b([^+ ]+?)([uAi])st(?!\s)\b/$1$2 |st/g; # normal "[uAi] ast", can't be followed by space (eg. mAst vs ...mA |st.)
+$_ =~ s/\b([^+ ]+?)([uAi])st(\p{P})/$1$2 |st$3/g; # normal "[uAi] ast", is often followed by punctuation (eg. mAst vs ...mA |st.)
 
 
 ##### Noun Section #####
@@ -200,7 +200,7 @@ $_ =~ s/\b([^+ ]{2,}?)(?<!A)gAn\b/$1h_+An/g;  # Nominal plural suffix from stem 
 $_ =~ s/\b([^+ ]+?)(A|u)i\b/$1$2_+e/g;        # Ezafe preceded by long vowel
 $_ =~ s/\b([^+ ]{2,}?)(hA|-hA)\b/$1_+$2/g;            # Nominal plural suffix
 $_ =~ s/\b([^+ ]{2,}?)(hA|-hA)(_\+\S*?)\b/$1_+$2$3/g; # Nominal plural suffix
-$_ =~ s/\b([^+ ]{3,}?)(An)\b/$1_+$2/g;                # Plural suffix '+An'
+$_ =~ s/\b([^+ ]{3,}?)(?<!st)(An)\b/$1_+$2/g;         # Plural suffix '+An'
 $_ =~ s/\b(\S*?[$ar_chars]\S*?)At\b/$1h/og;           # Arabic plural: +At
 $_ =~ s/\b((?:m|\|)\S*?)At\b/$1h/g;                   # Arabic plural: +At
 
@@ -250,6 +250,7 @@ unless ( $show_links ) {
 if ( $tokenize ) {
  $_ =~ s/([ ,.;:!?(){}#1-9\/])/ $1 /g;  # Pads punctuation w/ spaces
  $_ =~ s/(\s){2,}/$1/g;                 # Removes multiple spaces
+ $_ =~ s/== 2 0==/==20==/g;             # Quickie bugfix for newlines
 }
 
 
@@ -395,7 +396,6 @@ thrAn	thrAn
 tim	tim
 hfth	hfth
 kihAn	kihAn
-dktr	dktr
 Hti	Hti
 zndgi	zndgi
 sAzmAn	sAzmAn
@@ -439,37 +439,39 @@ mrA	mn rA
 trA	tu rA
 cist	ch |st
 krdn	kr_+dn
-Cdh	C_+dh
-krdh	kr_+dh
+Cdh	C_+d_+h
+krdh	kr_+d_+h
 mrdm	mrd_+m
-dAdh	dA_+dh
-budh	bu_+dh
+dAdh	dA_+d_+h
+budh	bu_+d_+h
 zbAnhAi	zbAn_+hA_+e
 zbAnhA	zbAn_+hA
-budh	bu_+dh
-gLCth	gLC_+th
+budh	bu_+d_+h
+gLCth	gLC_+t_+h
 budnd	bud_+nd
-dACth	dAC_+th
+dACth	dAC_+t_+h
 krdnd	krd_+nd
 rui	ru_+e
 kCurhAi	kCur_+hA_+e
 kCurhA	kCur_+hA
 sui	su_+e
-grfth	grf_+th
+grfth	grf_+t_+h
 Cdn	C_+dn
-]indh	]in_+dh
+]indh	]i_+ndh
 dftr	dftr
-sAxth	sAx_+th
-]mdh	]m_+dh
+dfAtr	dfAtr
+dktr	dktr
+sAxth	sAx_+t_+h
+]mdh	]m_+d_+h
 rAi	rA_+e
 jAi	jA_+e
 uqt	uqt
-gLACth	gLAC_+th
+gLACth	gLAC_+t_+h
 budn	bu_+dn
 didn	di_+dn
-didh	di_+dh
+didh	di_+d_+h
 dAdn	dA_+dn
-zdh	z_+dh
+zdh	z_+d_+h
 zdnd	z_+d_+nd
 dAdnd	dAd_+nd
 |slAmi	|slAm_+i
