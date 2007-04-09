@@ -11,8 +11,8 @@ use strict;
 #use diagnostics;
 use Getopt::Long;
 
-my $version        = "0.9.4";
-my $date           = "2007-03-22";
+my $version        = "0.9.5";
+my $date           = "2007-04-10";
 my $copyright      = "(c) 2004-2007  Jon Dehdari - GPL v2";
 my $title          = "Perstem: Persian stemmer $version, $date - $copyright";
 my ( $dont_stem, $input_type, $output_type, $no_roman, $recall, $show_links, $show_only_root, $tokenize, $unvowel, $zwnj )  = undef; 
@@ -200,7 +200,7 @@ $_ =~ s/\b([^+ ]{2,}?)(?<!A)gAn\b/$1h_+An/g;  # Nominal plural suffix from stem 
 $_ =~ s/\b([^+ ]+?)(A|u)i\b/$1$2_+e/g;        # Ezafe preceded by long vowel
 $_ =~ s/\b([^+ ]{2,}?)(hA|-hA)\b/$1_+$2/g;            # Nominal plural suffix
 $_ =~ s/\b([^+ ]{2,}?)(hA|-hA)(_\+\S*?)\b/$1_+$2$3/g; # Nominal plural suffix
-$_ =~ s/\b([^+ ]{3,}?)(?<!st)(An)\b/$1_+$2/g;         # Plural suffix '+An'
+$_ =~ s/\b([^+ ]{4,}?)(?<!st)(An)\b/$1_+$2/g;         # Plural suffix '+An'
 $_ =~ s/\b(\S*?[$ar_chars]\S*?)At\b/$1h/og;           # Arabic plural: +At
 $_ =~ s/\b((?:m|\|)\S*?)At\b/$1h/g;                   # Arabic plural: +At
 
