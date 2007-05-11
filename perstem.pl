@@ -11,11 +11,12 @@ use strict;
 #use diagnostics;
 use Getopt::Long;
 
-my $version        = "0.9.5";
-my $date           = "2007-04-10";
+my $version        = "0.9.6f";
+my $date           = "2007-05-12";
 my $copyright      = "(c) 2004-2007  Jon Dehdari - GPL v2";
 my $title          = "Perstem: Persian stemmer $version, $date - $copyright";
-my ( $dont_stem, $input_type, $output_type, $no_roman, $recall, $show_links, $show_only_root, $tokenize, $unvowel, $zwnj )  = undef; 
+my ( $dont_stem, $input_type, $output_type, $no_roman, $pos, $recall, $show_links, $show_only_root, $tokenize, $unvowel, $zwnj )  = undef; 
+my ( $pos_v, $pos_n, $pos_aj )  = undef; 
 my $ar_chars       = "EqHSTDZLVU";
 #my $al             = "AbptVjcHxdLrzJsCSDTZEGfqkglmnuhiaoe\x5d\x7cPkMXIUN~";
 #my $longvowel     = "Aui]";
@@ -36,6 +37,7 @@ Options:
   -l, --links            Show morphological links
   -n, --noroman          Delete all non-Arabic script characters (eg. HTML tags)
   -o, --output <type>    Output character encoding type {arabtex,cp1256,isiri3342,utf8,unihtml}
+  -p, --pos              Tag words for parts of speech
   -r, --recall           Increase recall by parsing ambiguous affixes
   -t, --tokenize         Tokenize punctuation
   -u, --unvowel          Remove short vowels
@@ -53,6 +55,7 @@ GetOptions(
     'l|links'       => \$show_links,
     'n|noroman'     => \$no_roman,
     'o|output:s'    => \$output_type,
+    'p|pos'	    => \$pos,
     'r|recall'	    => \$recall,
 #    's|stoplist:s'  => \$resolve_file,
     't|tokenize'    => \$tokenize,
@@ -150,6 +153,8 @@ $_ =~ s/h \|i(?![a-zA-Z|])/h-\|i/g; # '+h-|i'
 
 unless ($dont_stem){ # Do stemming regexes unless $dont_stem is true
 
+( $pos_v, $pos_n, $pos_aj )  = undef; 
+
 if ( $resolve{$_} ) { $_ = $resolve{$_} } # word is found in Resolve section
 else {
 
@@ -163,14 +168,15 @@ else {
 $_ =~ s/\b(?<!\]|\|)n(?![uAi])(\S{2,}?(?:im|id|nd|(?<!A)m|(?<![Au])i|(?<!A)d|(?:r|u|i|A|n|m|z)dn|(?:f|C|x|s)tn)(?:mAn|tAn|CAn|C)?)\b/n+_$1/g; # neg. verb prefix 'n+'
 $_ =~ s/(\bn\+_|\b(?<!\]|\|))mi-(?![uAi])(\S{2,}?(?:im|id|nd|(?<!A)m|(?<!A)i|(?<!A)d)(?:mAn|tAn|CAn|C)?)\b/$1mi-+_$2/g;    # Durative verb prefix 'mi+'
 $_ =~ s/(\bn\+_|\b(?<!\]|\|))mi(?![uAi])(?!-)(\S{2,}?(?:im|id|nd|(?<!A)m|(?<!A)i|(?<!A)d)(?:mAn|tAn|CAn|C)?)\b/$1mi+_$2/g; # Durative verb prefix 'mi+'
-$_ =~ s/\b(?<!\]|\|)b(?![uAi])([^ ]{2,}?(?:im|id|nd|(?<!A)m|(?<!A)i|d)(?:mAn|tAn|CAn|C)?)\b/b+_$1/g;       # Subjunctive verb prefix 'be+'
+$_ =~ s/\b(?<!\]|\|)b(?![uAir])([^ ]{2,}?(?:im|id|nd|(?<!A)m|(?<!A)i|d)(?:mAn|tAn|CAn|C)?)\b/b+_$1/g;       # Subjunctive verb prefix 'be+'
 
 ######## Verb Suffixes & Enclitics ########
 $_ =~ s/(\S{2,}?(?:[^+ ]{2}d|[^+ ]{2}(?:s|f|C|x)t|\bn\+_\S{2,}?|mi\+_\S{2,}?|b\+_\S{2,}?)(?:im|id|nd|m|(?<!A|u)i|d))(CAn|tAn|C)\b/$1_+$2/g;   # Verbal Object verb enclitic
-$_ =~ s/\b(n\+_\S{2,}?|\S?mi\+_\S{2,}?|b\+_\S{2,}?)([uAi])([iI])(im|id|i)(_\+\S*)?\b/$1$2_+0$4$5/g;    # Removes epenthesized 'i/I' before Verbal Person suffixes 'im/id/i'
-$_ =~ s/\b(n\+_\S{2,}?|\S?mi\+_\S{2,}?|b\+_\S{2,}?)([uA])i(nd|d|m)(_\+\S*?)?\b/$1$2_+0$3$4/g;    # Removes epenthesized 'i' before Verbal Person suffixes 'm/d/nd'
+$_ =~ s/\b(n\+_\S{2,}?|\S?mi\+_\S{2,}?|b\+_\S{2,}?)([uAi])([iI])(im|id|i)(_\+\S+?)?\b/$1$2_+0$4$5/g;    # Removes epenthesized 'i/I' before Verbal Person suffixes 'im/id/i'
+#$_ =~ s/\b(n\+_\S{2,}?|\S?mi-?\+_\S{2,}?|b\+_\S{2,}?)([uA])i(nd|d|m)(_\+\S+?)?\b/$1$2_+0$3$4/g;    # Removes epenthesized 'i' before Verbal Person suffixes 'm/d/nd'
+$_ =~ s/\b(n\+_\S{2,}?|\S?mi-?\+_\S{2,}?|b\+_\S{2,}?)([uA])i(nd|d|m)(_\+\S+?)?$/$1$2_+0$3$4/g;    # Removes epenthesized 'i' before Verbal Person suffixes 'm/d/nd'
 $_ =~ s/((?>\S*?)(?:\S{3}(?<!A)d|\S(?:s|f|C|x)t|mi-?\+_\S{2,}?|\bn\+_(?!mi)\S{2,}?|\bb\+_\S{2,}?))((?<!A)nd|id|im|d|(?<!A|u)i|m)(_\+\S*?)?\b/$1_+$2$3/g;    # Verbal Person verb suffix
-$_ =~ s/(\S{2,}?)(?<!A)d_\+(nd|id|im|d|i|m)(_\+\S*?)?\b/$1_+d_+$2$3/g;    # Verbal tense suffix 'd'
+$_ =~ s/(\S{2,}?)(?<!A)d_\+(nd|id|im|d|m)(_\+\S*?)?\b/$1_+d_+$2$3/g;    # Verbal tense suffix 'd' (sans ..._+d_+i  -- see recall section)
 $_ =~ s/(\S+?)(s|f|C|x)t_\+(nd|id|im|d|i|m)(_\+\S*?)?\b/$1$2_+t_+$3$4/g;  # Verbal tense suffix 't'
 
 $_ =~ s/\b(\S{2,}?)(r|u|i|A|n|m)dn\b/$1$2_+dn/g;               # Verbal Infinitive '+dan'
@@ -187,12 +193,15 @@ $_ =~ s/\b(xuAh|dAr|kn|Cu|bAC)(d|nd|id|i|im|m)\b/$1_+$2/g;  # future/have - temp
 $_ =~ s/_\+d_\+\B/_+d/g;  # temp. until resolve file works
 $_ =~ s/_\+t_\+\B/_+t/g;  # temp. until resolve file works
 
+$_ =~ m/(?:_\+|\+_)/ and $pos_v = 1;
+
 ######## Contractions ########
-$_ =~ s/\b([^+ ]+?)([uAi])st(\p{P})/$1$2 |st$3/g; # normal "[uAi] ast", is often followed by punctuation (eg. mAst vs ...mA |st.)
+$_ =~ s/\b([^+ ]{2,}?)([uAi])st(\p{P})/$1$2 |st$3/g; # normal "[uAi] ast", is often followed by punctuation (eg. mAst vs ...mA |st.)
 
 
 ##### Noun Section #####
 
+unless ( $pos_v ) {
 $_ =~ s/\b([^+ ]{2,}?)(u|A)i(CAn|C|tAn|mAn)(_\+.*?)?\b/$1$2_+0_+$3$4/g;  # Removes epenthesized 'i' before genitive pronominal enclitics
 $_ =~ s/\b([^+ ]{2,}?)([^uAi+ ])(CAn|(?<!s)tAn)(_\+.*?)?\b/$1$2_+$3$4/g;     # Genitive pronominal enclitics
 #$_ =~ s/\b([^+ ]{2,}?)(A|u)\b//g;            # Removes epenthesized 'i' before accusative enclitics
@@ -204,27 +213,39 @@ $_ =~ s/\b([^+ ]{4,}?)(?<!st)(An)\b/$1_+$2/g;         # Plural suffix '+An'
 $_ =~ s/\b(\S*?[$ar_chars]\S*?)At\b/$1h/og;           # Arabic plural: +At
 $_ =~ s/\b((?:m|\|)\S*?)At\b/$1h/g;                   # Arabic plural: +At
 
+$_ =~ m/_\+/ and $pos_n = 1;
+
+}
+
 ##### Adjective Section #####
 
+unless ( $pos_v || $pos_n ) {
 $_ =~ s/\b([^+ ]+?)trin\b/$1_+trin/g;   # Adjectival superlative suffix
 $_ =~ s/\b([^+ ]+?)tr\b/$1_+tr/g;       # Adjectival comparative suffix
 $_ =~ s/\b([^+ ]+?)(?<!A)gi\b/$1h_+i/g; # Adjectival suffix from stem ending in 'eh'
 $_ =~ s/\b([^+ ]+?)(i|I)i\b/$1_+i/g;    # '+i' suffix preceded by 'i' (various meanings)
 $_ =~ s/([^+ ]+?)e\b/$1_+e/g;           # An ezafe
 
+$_ =~ m/_\+/ and $pos_aj = 1;
+}
+
 ##### End #####
 
 ### Increase recall, but lower precision; also contains experimental regexes
 if ( $recall ) {
- $_ =~ s/\b([^+ ]{3,}?)(?<![Au])i\b/$1_+i/g;         # Indef. '+i' suffix
- $_ =~ s/\b([^+ ]*?[$ar_chars][^+ ]*?)t\b/$1_+t/og;  # Arabic fem: +at
- $_ =~ s/\b(m[^+ ]{3,}?)(?<![Aiu])t\b/$1_+t/g;       # Arabic fem: +at
+### Verbal ###
+ $_ =~ s/(\S{2,}?)(?<!A)d_\+i(_\+\S+?)?\b/$1_+d_+i$3/g; # Verbal tense suffix 'd' + 2nd person singular 'i'
  $_ =~ s/\b([^+ ]{2,}?(?:r|(?<![Ai])u|(?<![Au])i|n|m|z))d(?!\s)\b/$1_+d/g; # 3rd person singular past verb - voiced
  $_ =~ s/\b([^+ ]{2,}?(?:f|C|x|s))t(?!\s)\b/$1_+t/g;       # 3rd person singular past verb - unvoiced
 # $_ =~ s/\b(n?)([^+ ]{2,}?)((?<=r|u|i|A|n|m|z)d|(?<=f|C|x|s)t)(?!\s)\b/$1+_$2_+$3/g; # 3rd person singular past verb & neg.
  $_ =~ s/(\S{2,}?(?:[^+ ]{2}d|[^+ ]{2}(?:s|f|C|x)t|\bn\+_\S{2,}?|mi\+_\S{2,}?|b\+_\S{2,}?)(?:im|id|nd|m|(?<!A|u)i|d))mAn\b/$1_+mAn/g;   # Verbal Object verb enclitic +mAn
+### Non-verbal ###
+ $_ =~ s/\b([^+ ]{3,}?)(?<![Au])i\b/$1_+i/g;        # Indef. '+i' suffix
+ $_ =~ s/\b([^+ ]*?[$ar_chars][^+ ]*?)t\b/$1_+t/og; # Arabic fem: +at
+ $_ =~ s/\b(m[^+ ]{3,}?)(?<![Aiu])t\b/$1_+t/g;      # Arabic fem: +at
  $_ =~ s/\b([^+ ]{2,}?)([^uAi+ ])(mAn|C)(_\+\S*?)?\b/$1$2_+$3$4/g;     # Genitive pronominal enclitics +mAn or +C
 }
+
 
 ### Deletes everything but the root
 if ( $show_only_root ) {
@@ -237,6 +258,57 @@ if ( $show_only_root ) {
 } # ends else -- not found in Resolve section
 } # ends unless $dont_stem
 
+
+### Show parts of speech
+if ( $pos ) {
+## Verbal ##
+ if ( $pos_v ) {
+ $_ =~ s/^(\P{Po}*)(.*?)$/$1\/V/;
+ my $punct = $2;
+ $_ =~ m/b\+_/g            and $_ .= "+SBJN-IMP"; # Subjunctive/imperative 'be'
+ $_ =~ m/n\+_/g            and $_ .= "+NEG";      # Negative 'na'
+ $_ =~ m/mi-?\+_/g         and $_ .= "+DUR";      # Durative 'mi'
+ $_ =~ m/_\+[dt](?!_\+h)/g and $_ .= "+PAST";     # Past tense 'd/t'
+ $_ =~ m/_\+m/g            and $_ .= "+1S";  # 1 person singular 'am'
+ $_ =~ m/_\+im/g           and $_ .= "+1P";  # 1 person plural 'im'
+ $_ =~ m/_\+id/g           and $_ .= "+2P";  # 2 person plural 'id'
+ $_ =~ m/_\+nd/g           and $_ .= "+3P";  # 3 person plural 'nd'
+ $_ =~ m/_\+mAn/g          and $_ .= "+1P.ACC";  # 1 person plural accusative 'emAn'
+ $_ =~ m/_\+tAn/g          and $_ .= "+2P.ACC";  # 2 person plural accusative 'etAn'
+ $_ =~ m/_\+CAn/g          and $_ .= "+3P.ACC";  # 3 person plural accusative 'eshAn'
+
+ $_ =~ m/_\+[dt]n/g    and $_ .= "+INF";  # Infinitive 'dan/tan'
+ $_ =~ m/_\+ndh/g      and $_ .= "+PRPT"; # Present participle 'andeh'
+ $_ =~ m/_\+[dt]_\+h/g and $_ .= "+PSPT"; # Past participle 'deh/teh'
+ $_ .= "$punct";
+ }
+
+## Nominal ##
+ if ( $pos_n ) {
+ $_ =~ s/^(\P{Po}*)(.*?)$/$1\/N/;
+ my $punct = $2;
+ $_ =~ m/_\+-?hA/g and $_ .= "+PL";      # Plural 'hA'
+ $_ =~ m/_\+An/g   and $_ .= "+PL+ANIM"; # Plural 'An'
+ $_ =~ m/_\+At/g   and $_ .= "+PL";      # Plural 'At'
+ $_ =~ m/_\+e/g    and $_ .= "+EZ";    # Ezafe 'e'
+ $_ =~ m/_\+C/g    and $_ .= "+3S.PC"; # 3 person singular pronominal clitic 'esh'
+ $_ =~ m/_\+mAn/g  and $_ .= "+1P.PC"; # 1 person plural pronominal clitic 'emAn'
+ $_ =~ m/_\+tAn/g  and $_ .= "+2P.PC"; # 2 person plural pronominal clitic 'etAn'
+ $_ =~ m/_\+CAn/g  and $_ .= "+3P.PC"; # 3 person plural pronominal clitic 'eshAn'
+ $_ .= "$punct";
+ }
+
+## Adjectival ##
+ if ( $pos_aj ) {
+ my $punct = $2;
+ $_ =~ s/^(\P{Po}*)(.*?)$/$1\/AJ/;
+ $_ =~ m/_\+tr/g   and $_ .= "+COMPR"; # Comparative 'tar'
+ $_ =~ m/_\+trin/g and $_ .= "+SUPR";  # Superlative 'tarin'
+ $_ .= "$punct";
+ }
+} # ends if $pos
+
+
 ### Deletes word boundaries ' ' from morpheme links '_+'/'+_'
 unless ( $show_links ) {
  $_ =~ s/_\+0/ /g;  # Removes epenthesized letters
@@ -248,9 +320,10 @@ unless ( $show_links ) {
 
 ### Tokenizes punctuation
 if ( $tokenize ) {
- $_ =~ s/([ ,.;:!?(){}#1-9\/])/ $1 /g;  # Pads punctuation w/ spaces
- $_ =~ s/(\s){2,}/$1/g;                 # Removes multiple spaces
- $_ =~ s/== 2 0==/==20==/g;             # Quickie bugfix for newlines
+ $_ =~ s/([ ,.;:!?(){}#\/])/ $1 /g;  # Pads punctuation w/ spaces
+ $_ =~ s/(\d+)/ $1 /g;               # Pads numbers w/ spaces
+ $_ =~ s/(\s){2,}/$1/g;              # Removes multiple spaces
+ $_ =~ s/== 20 ==/==20==/g;          # Quickie bugfix for newlines
 }
 
 
@@ -427,6 +500,8 @@ grdn	grdn
 lAdn	lAdn
 kudn	kudn
 mAdh	mAdh
+miliArd	miliArd
+kilumtr	kilumtr
 jAdh	jAdh
 |st	|st
 bud	bud
@@ -435,6 +510,7 @@ ktb	ktAb
 |fkAr	fkr
 |EDA	EDu
 |fGAnstAn	|fGAnstAn
+pArlmAn	pArlmAn
 mrA	mn rA
 trA	tu rA
 cist	ch |st
@@ -468,6 +544,7 @@ jAi	jA_+e
 uqt	uqt
 gLACth	gLAC_+t_+h
 budn	bu_+dn
+nCdh	n+_C_+d_+h
 didn	di_+dn
 didh	di_+d_+h
 dAdn	dA_+dn
