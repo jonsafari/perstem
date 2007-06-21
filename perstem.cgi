@@ -1,14 +1,8 @@
 #!/usr/bin/perl
-# Written by Jon Dehdari 2004-2005
+# Written by Jon Dehdari 2004-2007
 # Perl 5.8
 # Stemmer and Morphological Parser for Persian
 # The license is the GPL v.2 or later (www.fsf.org)
-
-# The format of the resolve.txt file is as follows:
-# 1. Mokassar: 		'ktb	ktAb'    OR    'ktb	ktAb_+PL'
-# 2. Preparsed (speed):	'krdn	kr_+dn'
-# 3. Don't stem:	'bArAn	bArAn'
-# 4. Stop word:		'u	'
 
 
 use strict;
