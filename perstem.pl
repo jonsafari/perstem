@@ -1,8 +1,8 @@
 #!/usr/bin/perl
-# Written by Jon Dehdari 2004-2007
-# Perl 5.8
+# Written by Jon Dehdari 2004-2010
+# Perl 5.8+
 # Perstem:  Stemmer and Morphological Parser for Persian
-# The license is the GPL v.2 (www.fsf.org)
+# The license is the GPL v.3 (www.fsf.org)
 # Usage:  perl perstem.pl [options] < input > output
 # Issues: punctuation vs tokenization
 
@@ -11,12 +11,12 @@ use strict;
 #use diagnostics;
 use Getopt::Long;
 
-my $version        = "0.9.7";
-my $date           = "2007-05-12";
-my $copyright      = "(c) 2004-2007  Jon Dehdari - GPL v2";
+my $version        = "0.9.9.2";
+my $date           = "2010-02-16";
+my $copyright      = "(c) 2004-2010  Jon Dehdari - GPL v3";
 my $title          = "Perstem: Persian stemmer $version, $date - $copyright";
-my ( $dont_stem, $input_type, $output_type, $no_roman, $pos, $recall, $show_links, $show_only_root, $tokenize, $unvowel, $zwnj )  = undef; 
-my ( $pos_v, $pos_n, $pos_aj )  = undef; 
+my ( $dont_stem, $input_type, $output_type, $no_roman, $pos, $recall, $show_links, $show_only_stem, $skip_comments, $tokenize, $unvowel, $zwnj )  = undef;
+my ( $pos_v, $pos_n, $pos_aj )  = undef;
 my $ar_chars       = "EqHSTDZLVU";
 #my $al             = "AbptVjcHxdLrzJsCSDTZEGfqkglmnuhiaoe\x5d\x7cPkMXIUN~";
 #my $longvowel     = "Aui]";
@@ -39,10 +39,11 @@ Options:
   -o, --output <type>    Output character encoding type {arabtex,cp1256,isiri3342,utf8,unihtml}
   -p, --pos              Tag words for parts of speech
   -r, --recall           Increase recall by parsing ambiguous affixes
+      --skip-comments    Skip commented-out lines, without printing them
+  -s, --stem             Return only word stems
   -t, --tokenize         Tokenize punctuation
   -u, --unvowel          Remove short vowels
   -v, --version          Print version ($version)
-  -w, --root             Return only word roots
   -z, --zwnj             Insert Zero Width Non-Joiners where they should be
 
 END_OF_USAGE
@@ -57,20 +58,24 @@ GetOptions(
     'o|output:s'    => \$output_type,
     'p|pos'	    => \$pos,
     'r|recall'	    => \$recall,
+    'skip-comments' => \$skip_comments,
 #    's|stoplist:s'  => \$resolve_file,
+    's|stem'        => \$show_only_stem,
     't|tokenize'    => \$tokenize,
     'u|unvowel'     => \$unvowel,
     'v|version'     => sub { print "$version\n"; exit; },
-    'w|root'        => \$show_only_root,
     'z|zwnj'        => \$zwnj,
 ) or die $usage;
 
-$input_type  and $input_type  =~ s/.*1256/cp1256/; # equates win1256 with cp1256
-$output_type and $output_type =~ s/.*1256/cp1256/; # equates win1256 with cp1256
-$input_type  and $input_type  =~ tr/[A-Z]/[a-z]/;  # recognizes more enctype spellings
-$output_type and $output_type =~ tr/[A-Z]/[a-z]/;  # recognizes more enctype spellings
-$input_type  and $input_type  =~ tr/-//;           # eg. UTF-8 & utf8
-$output_type and $output_type =~ tr/-//;           # eg. UTF-8 & utf8
+$input_type  or  $input_type = "roman";	# default is roman input
+$output_type or $output_type = "roman";	# default is roman output
+
+$input_type  =~ s/.*1256/cp1256/; # equates win1256 with cp1256
+$output_type =~ s/.*1256/cp1256/; # equates win1256 with cp1256
+$input_type  =~ tr/[A-Z]/[a-z]/;  # recognizes more encoding spelling variants
+$output_type =~ tr/[A-Z]/[a-z]/;  # recognizes more encoding spelling variants
+$input_type  =~ tr/-//;           # eg. UTF-8 & utf8
+$output_type =~ tr/-//;           # eg. UTF-8 & utf8
 
 
 ### Open Resolve section
@@ -78,28 +83,41 @@ while (my $resolve = <DATA>) {
     next if $resolve =~ /^#/;
     chomp $resolve;
     my @resolve = split /\t/, $resolve;
-    %resolve = ( %resolve, "$resolve[0]" => "$resolve[1]" , );
+    $resolve{"$resolve[0]"} = "$resolve[1]";
 }
 
 
-### A hack for what Perl should've already done: support at runtime BOTH utf8 & other input types
-if ($input_type and $input_type eq "utf8") { # UTF-8
+### A hack for what Perl should've already done: support at runtime BOTH utf8 & other input/output types
+if ($input_type eq "utf8") { # UTF-8 input
  use encoding "utf8";
- open STDIN, "<:encoding(UTF-8)" ; 
+ open STDIN, "<:encoding(UTF-8)" ;
+}
+elsif ($output_type eq "utf8") { # UTF-8 output
+ use encoding "utf8";
+ open STDOUT, "<:encoding(UTF-8)" ;
 }
 else { unimport encoding "utf8";}
- 
+
 
 while ($_ = <> ) {
-next if ( /^$/ | /^\s+$/ | /^#/ );  # Skips empty or commented-out lines
-$_ =~ tr/\r/\n/d;   # Deletes lame DOS carriage returns
-$_ =~ s/\n/ ==20==/; # Converts newlines to temporary placeholder ==20== (after \x20)
+if ( /^$/ | /^\s+$/ | /^#/ ) {		# Treat empty or commented-out lines
+    if ($skip_comments) { next; }	# Don't even print them out
+    else { print; next; }		# At least print them out
+}
+$_ =~ tr/\r/\n/d;	# Deletes lame DOS carriage returns
+$_ =~ s/\n/====/;	# Converts newlines to temporary placeholder ====
 
-@_ = split(/(?<!mi)\s+(?!hA)/);
-foreach (@_) {
+
+### Tokenizes punctuation
+if ( $tokenize ) {
+ $_ =~ s/([,.;:!?(){}«»#\/])/ $1 /g;	# Pads punctuation w/ spaces
+ $_ =~ s/(\d+)/ $1 /g;			# Pads numbers w/ spaces
+ $_ =~ s/(\s){2,}/$1/g;			# Removes multiple spaces
+}
+
 
 ### Converts from native script to romanized
-if ($input_type) {
+if ($input_type ne "roman") {
 
  if ($no_roman) {
   $_ =~ s/<br>/\n/g;
@@ -112,28 +130,36 @@ if ($input_type) {
  }
 
  if ($input_type eq "utf8") {
-  $_ =~ tr/ابپتثجچحخدذرزژسشصضطظعغفقكگلمنوهيَُِآ☿ةکیءىۀئؤًّ،؛؟٪‍‌/AbptVjcHxdLrzJsCSDTZEGfqkglmnuhiaoe\x5d\x7cPkiMiXIUN~,;?%*\-/; }
+     if ($output_type eq "roman") { # preserve Latin characters by surrounding them with pseudo-quotes
+	 s/([a-zA-Z\x5d\x7c~,;?%*\-]+)/˹${1}˺/g;
+     }
+  $_ =~ tr/اأبپتثجچحخدذرزژسشصضطظعغفقكگلمنوهيَُِآ☿ةکیءىۀئؤًّ،؛؟٪‍‌/ABbptVjcHxdLrzJsCSDTZEGfqkglmnuhiaoe\x5d\x7cPkiMiXIUN~,;?%*\-/; }
 
  elsif ($input_type eq "unihtml") {
    my %unihtml2roman = (
- '&#1575;' => 'A', '&#9791;' => '|', "&#1576;" => 'b', '&#1577;' => 'P', '&#1662;' => 'p', '&#1578;' => 't', '&#1579;' => 'V', '&#1580;' => 'j', '&#1670;' => 'c', '&#1581;' => 'H', '&#1582;' => 'x', '&#1583;' => 'd', '&#1584;' => 'L', '&#1585;' => 'r', '&#1586;' => 'z', '&#1688;' => 'J', '&#1587;' => 's', '&#1588;' => 'C', '&#1589;' => 'S', '&#1590;' => 'D', '&#1591;' => 'T', '&#1592;' => 'Z', '&#1593;' => 'E', '&#1594;' => 'G', '&#1601;' => 'f', '&#1602;' => 'q', '&#1603;' => 'k', '&#1705;' => 'k', '&#1711;' => 'g', '&#1604;' => 'l', '&#1605;' => 'm', '&#1606;' => 'n', '&#1608;' => 'u', '&#1607;' => 'h', '&#1610;' => 'i', '&#1740;' => 'i', '&#1609;' => 'A', '&#1614;' => 'a', '&#1615;' => 'o', '&#1616;' => 'e', '&#1617;' => '~', '&#1570;' => ']', '&#1569;' => 'M', '&#1611;' => 'N', '&#1571;' => '|', '&#1572;' => 'U', '&#1573;' => '|', '&#1574;' => 'I', '&#1728;' => 'X', '&#1642;' => '%', '&#1548;' => ',', '&#1563;' => ';', '&#1567;' => '?', '&#8204;' => "-", ' ' => ' ', '.' => '.', ':' => ':', );
+'&#1575;' => 'A', '&#9791;' => '|', '&#1571;' => 'B', '&#1576;' => 'b', '&#1577;' => 'P', '&#1662;' => 'p', '&#1578;' => 't', '&#1579;' => 'V', '&#1580;' => 'j', '&#1670;' => 'c', '&#1581;' => 'H', '&#1582;' => 'x', '&#1583;' => 'd', '&#1584;' => 'L', '&#1585;' => 'r', '&#1586;' => 'z', '&#1688;' => 'J', '&#1587;' => 's', '&#1588;' => 'C', '&#1589;' => 'S', '&#1590;' => 'D', '&#1591;' => 'T', '&#1592;' => 'Z', '&#1593;' => 'E', '&#1594;' => 'G', '&#1601;' => 'f', '&#1602;' => 'q', '&#1603;' => 'k', '&#1705;' => 'k', '&#1711;' => 'g', '&#1604;' => 'l', '&#1605;' => 'm', '&#1606;' => 'n', '&#1608;' => 'u', '&#1607;' => 'h', '&#1610;' => 'i', '&#1740;' => 'i', '&#1609;' => 'A', '&#1614;' => 'a', '&#1615;' => 'o', '&#1616;' => 'e', '&#1617;' => '~', '&#1570;' => ']', '&#1569;' => 'M', '&#1611;' => 'N', '&#1571;' => '|', '&#1572;' => 'U', '&#1573;' => '|', '&#1574;' => 'I', '&#1728;' => 'X', '&#1642;' => '%', '&#1548;' => ',', '&#1563;' => ';', '&#1567;' => '?', '&#8204;' => "-", ' ' => ' ', '.' => '.', ':' => ':', );
   my @charx = split(/(?=\&\#)|(?=\s)|(?=\n)/, $_);
   $_ = "";
   foreach my $charx (@charx)
   {
     my $text_from_new = $unihtml2roman{$charx};
     $_ = $_ . $text_from_new;
-  } # Ends foreach
- }  # Ends elsif ($input_type eq "unihtml")
+  } # ends foreach
+ }  # ends elsif ($input_type eq "unihtml")
 
  elsif ($input_type eq "cp1256") {
-  $_ =~ tr/\xc7\xc8\x81\xca\xcb\xcc\x8d\xcd\xce\xcf\xd0\xd1\xd2\x8e\xd3\xd4\xd5\xd6\xd8\xd9\xda\xdb\xdd\xde\xdf\x90\xe1\xe3\xe4\xe6\xe5\xed\xf3\xf5\xf6\xc2\xff\xc9\x98\xc1\xc0\xc6\xc4\xf0\xf8\xa1\xba\xbf\xab\xbb\x9d\xec/AbptVjcHxdLrzJsCSDTZEGfqkglmnuhiaoe\x5d\x7cPkMXIUN~,;?{}\-i/; }
+  $_ =~ tr/\xc7\xc3\xc8\x81\xca\xcb\xcc\x8d\xcd\xce\xcf\xd0\xd1\xd2\x8e\xd3\xd4\xd5\xd6\xd8\xd9\xda\xdb\xdd\xde\xdf\x90\xe1\xe3\xe4\xe6\xe5\xed\xf3\xf5\xf6\xc2\xff\xc9\x98\xc1\xc0\xc6\xc4\xf0\xf8\xa1\xba\xbf\xab\xbb\x9d\xec/ABbptVjcHxdLrzJsCSDTZEGfqkglmnuhiaoe\x5d\x7cPkMXIUN~,;?{}\-i/; }
 
  elsif ($input_type eq "isiri3342") {
-  $_ =~ tr/\xc1\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc\xcd\xce\xcf\xd0\xd1\xd2\xd3\xd4\xd5\xd6\xd7\xd8\xd9\xda\xdb\xdc\xdd\xde\xdf\xe0\xfe\xf0\xf2\xf1\xc0\xc1\xfc\xda\xe1\xc2\xfb\xfa\xf3\xf6\xac\xbb\xbf\xa5\xe7\xe6\xa1/AbptVjcHxdLrzJsCSDTZEGfqKglmnuhyaoe\x5d\x7cPkiMIUN~,;?%{}\-/; }
+  $_ =~ tr/\xc1\xf8\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc\xcd\xce\xcf\xd0\xd1\xd2\xd3\xd4\xd5\xd6\xd7\xd8\xd9\xda\xdb\xdc\xdd\xde\xdf\xe0\xfe\xf0\xf2\xf1\xc0\xc1\xfc\xda\xe1\xc2\xfb\xfa\xf3\xf6\xac\xbb\xbf\xa5\xe7\xe6\xa1/ABbptVjcHxdLrzJsCSDTZEGfqKglmnuhyaoe\x5d\x7cPkiMIUN~,;?%{}\-/; }
 
  $_ =~ s/\bA/|/g; # eg. AirAn -> |irAn
+ $_ =~ s/˹\|/˹A/g;
 } # if ($input_type)
+
+
+@_ = split(/(?<!mi)\s+(?!hA)/);		# Tokenize
+foreach (@_) {				# Work with each word
 
 
 if ( $unvowel ) {
@@ -142,18 +168,18 @@ if ( $unvowel ) {
  $_ =~ s/[aeo~]//g;     # Finally, removes all other short vowels and tashdids
 }
 
-if ( $zwnj ) {
 #Inserts ZWNJ's where they should have been originally, but weren't
-$_ =~ s/(?<![a-zA-Z|])mi /mi-/g;    # 'mi-'
-$_ =~ s/(?<![a-zA-Z|])nmi /nmi-/g;  # 'mi-'
-$_ =~ s/ hA(?![a-zA-Z|])/-hA/g;     # '-hA'
-$_ =~ s/ hAi(?![a-zA-Z|])/-hAi/g;   # '-hA'
-$_ =~ s/h \|i(?![a-zA-Z|])/h-\|i/g; # '+h-|i'
+if ( $zwnj ) {
+ $_ =~ s/(?<![a-zA-Z|])mi /mi-/g;    # 'mi-'
+ $_ =~ s/(?<![a-zA-Z|])nmi /nmi-/g;  # 'mi-'
+ $_ =~ s/ hA(?![a-zA-Z|])/-hA/g;     # '-hA'
+ $_ =~ s/ hAi(?![a-zA-Z|])/-hAi/g;   # '-hA'
+ $_ =~ s/h \|i(?![a-zA-Z|])/h-\|i/g; # '+h-|i'
 }
 
 unless ($dont_stem){ # Do stemming regexes unless $dont_stem is true
 
-( $pos_v, $pos_n, $pos_aj )  = undef; 
+( $pos_v, $pos_n, $pos_aj )  = undef;
 
 if ( $resolve{$_} ) { $_ = $resolve{$_} } # word is found in Resolve section
 else {
@@ -247,15 +273,17 @@ if ( $recall ) {
 }
 
 
-### Deletes everything but the root
-if ( $show_only_root ) {
+} # ends else -- not found in Resolve section
+
+
+### Deletes everything but the stem
+if ( $show_only_stem ) {
 # $_ =~ s/\b[_+$al]*\+_([_+$al]+?)\b/$1/g;  # Removes prefixes
 # $_ =~ s/\b([_+$al]+?)_\+[_+$al]*\b/$1/g;  # Removes suffixes
  $_ =~ s/\b[^ ]+\+_([^ ]+?)\b/$1/g;  # Removes prefixes
  $_ =~ s/\b([^ ]+?)_\+[^ ]+\b/$1/g;  # Removes suffixes
 }
 
-} # ends else -- not found in Resolve section
 } # ends unless $dont_stem
 
 
@@ -318,41 +346,35 @@ unless ( $show_links ) {
  $_ =~ s/\+_/ /g;   # Removes all prefix links
 }
 
-### Tokenizes punctuation
-if ( $tokenize ) {
- $_ =~ s/([ ,.;:!?(){}#\/])/ $1 /g;  # Pads punctuation w/ spaces
- $_ =~ s/(\d+)/ $1 /g;               # Pads numbers w/ spaces
- $_ =~ s/(\s){2,}/$1/g;              # Removes multiple spaces
- $_ =~ s/== 20 ==/==20==/g;          # Quickie bugfix for newlines
-}
-
-
 ### Converts from romanized to native script
-if ($output_type) {
+if ($output_type ne "roman") {
  if ($output_type eq "utf8") {
-  $_ =~ tr/AbptVjcHxdLrzJsCSDTZEGfqKglmnuhyaoe\x5d\x7cPkiMXIUN~,;?%*\-/ابپتثجچحخدذرزژسشصضطظعغفقكگلمنوهيَُِآاةکیءۀئؤًّ،؛؟٪‍‌/; 
+     if ($input_type eq "roman") { # remove the pseudo-quotes around the preserved Latin characters
+	 s/˹(.+?)˺/$1/g;
+     }
+  $_ =~ tr/ABbptVjcHxdLrzJsCSDTZEGfqKglmnuhyaoe\x5d\x7cPkiMXIUN~,;?%*\-/اأبپتثجچحخدذرزژسشصضطظعغفقكگلمنوهيَُِآاةکیءۀئؤًّ،؛؟٪‍‌/;
 #  $_ =~ s/\./‫.‪/g; # Corrects periods to be RTL embedded
   }
 
  elsif ($output_type eq "unihtml") {
    my %roman2unihtml = (
-            'A' => '&#1575;', '|' => '&#1575;', 'b' => '&#1576;', 'p' => '&#1662;', 't' => '&#1578;', 'V' => '&#1579;', 'j' => '&#1580;', 'c' => '&#1670;', 'H' => '&#1581;', 'x' => '&#1582;', 'd' => '&#1583;', 'L' => '&#1584;', 'r' => '&#1585;', 'z' => '&#1586;', 'J' => '&#1688;', 's' => '&#1587;', 'C' => '&#1588;', 'S' => '&#1589;', 'D' => '&#1590;', 'T' => '&#1591;', 'Z' => '&#1592;', 'E' => '&#1593;', 'G' => '&#1594;', 'f' => '&#1601;', 'q' => '&#1602;', 'k' => '&#1705;', 'K' => '&#1603;', 'g' => '&#1711;', 'l' => '&#1604;', 'm' => '&#1605;', 'n' => '&#1606;', 'u' => '&#1608;', 'v' => '&#1608;', 'w' => '&#1608;', 'h' => '&#1607;', 'X' => '&#1728;', 'i' => '&#1740;', 'I' => '&#1574;', 'a' => '&#1614;', 'o' => '&#1615;', 'e' => '&#1616;', '~' => '&#1617;', ',' => '&#1548;', ';' => '&#1563;', '?' => '&#1567;', ']' => '&#1570;', 'M' => '&#1569;', 'N' => '&#1611;', 'U' => '&#1572;', '-' => '&#8204;', ' ' => ' ', '_' => '_', '+' => '+', "\n" => '<br/>', '.' => '&#8235.&#8234;', );
+'A' => '&#1575;', '|' => '&#1575;', 'B' => '&#1571;', 'b' => '&#1576;', 'p' => '&#1662;', 't' => '&#1578;', 'V' => '&#1579;', 'j' => '&#1580;', 'c' => '&#1670;', 'H' => '&#1581;', 'x' => '&#1582;', 'd' => '&#1583;', 'L' => '&#1584;', 'r' => '&#1585;', 'z' => '&#1586;', 'J' => '&#1688;', 's' => '&#1587;', 'C' => '&#1588;', 'S' => '&#1589;', 'D' => '&#1590;', 'T' => '&#1591;', 'Z' => '&#1592;', 'E' => '&#1593;', 'G' => '&#1594;', 'f' => '&#1601;', 'q' => '&#1602;', 'k' => '&#1705;', 'K' => '&#1603;', 'g' => '&#1711;', 'l' => '&#1604;', 'm' => '&#1605;', 'n' => '&#1606;', 'u' => '&#1608;', 'v' => '&#1608;', 'w' => '&#1608;', 'h' => '&#1607;', 'X' => '&#1728;', 'i' => '&#1740;', 'I' => '&#1574;', 'a' => '&#1614;', 'o' => '&#1615;', 'e' => '&#1616;', '~' => '&#1617;', ',' => '&#1548;', ';' => '&#1563;', '?' => '&#1567;', ']' => '&#1570;', 'M' => '&#1569;', 'N' => '&#1611;', 'U' => '&#1572;', '-' => '&#8204;', ' ' => ' ', '_' => '_', '+' => '+', "\n" => '<br/>', '.' => '&#8235.&#8234;', );
   my @charx = split(//, $_);
   $_ = "";
   foreach my $charx (@charx)
   {
     my $newchar = $roman2unihtml{$charx};
     $_ = $_ . $newchar;
-  } # Ends foreach
- }  # Ends elsif (unihtml)
+  } # ends foreach
+ }  # ends elsif (unihtml)
 
  elsif ($output_type eq "cp1256") {
-  $_ =~ tr/AbptVjcHxdLrzJsCSDTZEGfqKglmnuhyaoe\x5d\x7cPkMXIUN~,;?{}\-i/\xc7\xc8\x81\xca\xcb\xcc\x8d\xcd\xce\xcf\xd0\xd1\xd2\x8e\xd3\xd4\xd5\xd6\xd8\xd9\xda\xdb\xdd\xde\xdf\x90\xe1\xe3\xe4\xe6\xe5\xed\xf3\xf5\xf6\xc2\xff\xc9\x98\xc1\xc0\xc6\xc4\xf0\xf8\xa1\xba\xbf\xab\xbb\x9d\xec/;
+  $_ =~ tr/ABbptVjcHxdLrzJsCSDTZEGfqKglmnuhyaoe\x5d\x7cPkMXIUN~,;?{}\-i/\xc7\xc3\xc8\x81\xca\xcb\xcc\x8d\xcd\xce\xcf\xd0\xd1\xd2\x8e\xd3\xd4\xd5\xd6\xd8\xd9\xda\xdb\xdd\xde\xdf\x90\xe1\xe3\xe4\xe6\xe5\xed\xf3\xf5\xf6\xc2\xff\xc9\x98\xc1\xc0\xc6\xc4\xf0\xf8\xa1\xba\xbf\xab\xbb\x9d\xec/;
 #  $_ =~ s/\x2e/\xfe\x2e\xfd/g; # Corrects periods to be RTL embedded; broken
  }
 
  elsif ($output_type eq "isiri3342") {
-  $_ =~ tr/AbptVjcHxdLrzJsCSDTZEGfqKglmnuhyaoe\x5d\x7cPkiMIUN~,;?%{}\-/\xc1\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc\xcd\xce\xcf\xd0\xd1\xd2\xd3\xd4\xd5\xd6\xd7\xd8\xd9\xda\xdb\xdc\xdd\xde\xdf\xe0\xfe\xf0\xf2\xf1\xc0\xc1\xfc\xda\xe1\xc2\xfb\xfa\xf3\xf6\xac\xbb\xbf\xa5\xe7\xe6\xa1/; }
+  $_ =~ tr/ABbptVjcHxdLrzJsCSDTZEGfqKglmnuhyaoe\x5d\x7cPkiMIUN~,;?%{}\-/\xc1\xf8\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc\xcd\xce\xcf\xd0\xd1\xd2\xd3\xd4\xd5\xd6\xd7\xd8\xd9\xda\xdb\xdc\xdd\xde\xdf\xe0\xfe\xf0\xf2\xf1\xc0\xc1\xfc\xda\xe1\xc2\xfb\xfa\xf3\xf6\xac\xbb\xbf\xa5\xe7\xe6\xa1/; }
 
  elsif ($output_type eq "arabtex") {
    my %roman2arabtex = (
@@ -363,20 +385,20 @@ if ($output_type) {
   {
     my $newchar = $roman2arabtex{$charx};
     $_ = $_ . $newchar;
-  } # Ends foreach
+  } # ends foreach
 #  $_ = $_ . '\\\\'; # Appends LaTeX newline '\\' after each line
- }  # Ends elsif (arabtex)
+ }  # ends elsif (arabtex)
 
- if ($output_type eq "utf8" && m/[^ .\n]/) { # If utf8 & non-empty
-   binmode(STDOUT, ":utf8"); # Uses the :utf8 output layer 
-   s/==20==/\n/g && print "$_" or print "$_ ";
+ if ($output_type eq "utf8" && m/[^ \n]/) { # If utf8 & non-empty
+   binmode(STDOUT, ":utf8"); # Uses the :utf8 output layer
+   s/====/\n/g && print "$_" or print "$_ ";
  }
- elsif ( /[^ .\n]/ ) { # if arabic-script line is non-empty
-   s/==20==/\n/g && print "$_" or print "$_ ";
+ elsif ( /[^ \n]/ ) { # if arabic-script line is non-empty
+   s/====/\n/g && print "$_" or print "$_ ";
  }
-} # if ($output_type) -- for non-roman input
-elsif ( /[^ .\n]/ ) { # if roman-script line is non-empty 
-    s/==20==/\n/g && print "$_" or print "$_ ";
+} # ends if ($output_type ne "roman") -- for non-roman input
+elsif ( /[^ \n]/ ) { # if roman-script line is non-empty
+    s/====/\n/g && print "$_" or print "$_ ";
 }
 
 
