@@ -1,18 +1,17 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # Written by Jon Dehdari 2004-2010
 # Perl 5.8+
 # Perstem:  Stemmer and Morphological Parser for Persian
 # The license is the GPL v.3 (www.fsf.org)
 # Usage:  perl perstem.pl [options] < input > output
-# Issues: punctuation vs tokenization
 
 use strict;
 #use warnings;
 #use diagnostics;
 use Getopt::Long;
 
-my $version        = "0.9.9.2";
-my $date           = "2010-02-16";
+my $version        = "1.0";
+my $date           = "2010-05-14";
 my $copyright      = "(c) 2004-2010  Jon Dehdari - GPL v3";
 my $title          = "Perstem: Persian stemmer $version, $date - $copyright";
 my ( $dont_stem, $input_type, $output_type, $no_roman, $pos, $recall, $show_links, $show_only_stem, $skip_comments, $tokenize, $unvowel, $zwnj )  = undef;
@@ -38,7 +37,7 @@ Options:
   -n, --noroman          Delete all non-Arabic script characters (eg. HTML tags)
   -o, --output <type>    Output character encoding type {arabtex,cp1256,isiri3342,utf8,unihtml}
   -p, --pos              Tag words for parts of speech
-  -r, --recall           Increase recall by parsing ambiguous affixes
+  -r, --recall           Increase recall by parsing ambiguous affixes; may lower precision
       --skip-comments    Skip commented-out lines, without printing them
   -s, --stem             Return only word stems
   -t, --tokenize         Tokenize punctuation

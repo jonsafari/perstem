@@ -1,8 +1,8 @@
-#!/usr/bin/perl
-# Written by Jon Dehdari 2004-2007
-# Perl 5.8
+#!/usr/bin/env perl
+# Written by Jon Dehdari 2004-2010
+# Perl 5.8+
 # Stemmer and Morphological Parser for Persian
-# The license is the GPL v.2 or later (www.fsf.org)
+# The license is the GPL v.2 or later (see http://www.fsf.org)
 
 
 use strict;

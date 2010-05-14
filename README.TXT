@@ -1,36 +1,31 @@
-Perstem: Persian stemmer (c) 2004-2007  Jon Dehdari - GPL v.2 or greater
+Perstem:  Persian stemmer (c) 2004-2010  Jon Dehdari - GPL v.3
 
 Usage:    perl perstem.pl [options] < input > output
 
 Function: Stemmer and morphological analyzer for the Persian language (Farsi).
           Inflexional morphemes are separated from their roots.  Input may be
-	  encoded as Perso-Arabic script UTF-8, ISIRI 3342, CP (Windows) 1256,
+	  encoded as Perso-Arabic script UTF-8, ISIRI 3342, Windows-1256,
 	  or romanized text.  Use the -i flag to specify input encoding.  Output
 	  is handled similarly.
 
 Options:
-  -d, --nostem           Don't stem -- mostly for character-set conversion.
-  -h, --help             Print usage.
+  -d, --nostem           Don't stem -- mostly for character-set conversion
+  -h, --help             Print usage
   -i, --input <type>     Input character encoding type {cp1256,isiri3342,utf8,unihtml}
   -l, --links            Show morphological links.  For example 'mi-xurnd' would appear
                          as 'mi-+_xur_+nd' instead of the default 'mi- xur nd'.
-  -n, --noroman          Delete all non-Arabic script characters, such as HTML tags.
+  -n, --noroman          Delete all non-Arabic script characters (eg. HTML tags)
   -o, --output <type>    Output character encoding type {arabtex,cp1256,isiri3342,utf8,unihtml}
-  -r, --recall           Increase recall by parsing ambiguous affixes, such as the suffix 'i', 
-                         the Arabic feminine suffix 'at' (the parsing of this particular affix
-			 is only useful for information retrieval index-building), the unvoiced
-			 third-person past verbal suffix "t", and some genitive pronominal
-			 enclitics.  These letters in the final parts of a word are sometimes
-			 affixes and othertimes part of the lexical root.  For example, 'dusti'
-			 can either be 'dust+i' "your friend" or 'dusti' "friendship".  Without
-			 the -r flag, this word would appear as a single stem.
+  -p, --pos              Tag words for parts of speech
+  -r, --recall           Increase recall by analyzing ambiguous affixes; may hurt precision!
+      --skip-comments    Skip commented-out lines, without printing them
+  -s, --stem             Return only word stems.  For example 'mi-xurnd' would appear as 'xur'.
   -t, --tokenize         Tokenize punctuation.  Thus most non-alphabetic characters such as
                          periods, question marks, quotation marks, etc. are padded with spaces
 			 on both sides.
-  -u, --unvowel          Remove short vowels.
-  -v, --version          Print the current version.
-  -w, --root             Return only word roots.  For example 'mi-xurnd' would appear as 'xur'.
-  -z, --zwnj             Insert Zero Width Non-Joiners where they should be, but weren't.
+  -u, --unvowel          Remove short vowels
+  -v, --version          Print the current version
+  -z, --zwnj             Insert Zero Width Non-Joiners where they should be
                          For example, 'mixurnd' would appear as 'mi- xur nd'.
 
 
@@ -77,6 +72,7 @@ a	ARABIC FATHA
 o	ARABIC DAMMA
 e	ARABIC KASRA
 ]	ARABIC LETTER ALEF WITH MADDA ABOVE
+B	ARABIC LETTER ALEF WITH HAMZA ABOVE
 |	ARABIC LETTER ALEF (Initial)
 M	ARABIC LETTER HAMZA
 X	ARABIC LETTER HEH WITH YEH ABOVE
