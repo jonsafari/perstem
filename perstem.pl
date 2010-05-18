@@ -10,8 +10,8 @@ use strict;
 #use diagnostics;
 use Getopt::Long;
 
-my $version        = "1.0";
-my $date           = "2010-05-14";
+my $version        = "1.0.1";
+my $date           = "2010-05-19";
 my $copyright      = "(c) 2004-2010  Jon Dehdari - GPL v3";
 my $title          = "Perstem: Persian stemmer $version, $date - $copyright";
 my ( $dont_stem, $input_type, $output_type, $no_roman, $pos, $recall, $show_links, $show_only_stem, $skip_comments, $tokenize, $unvowel, $zwnj )  = undef;
@@ -99,18 +99,21 @@ else { unimport encoding "utf8";}
 
 
 while ($_ = <> ) {
+
+my $full_line;
+
 if ( /^$/ | /^\s+$/ | /^#/ ) {		# Treat empty or commented-out lines
     if ($skip_comments) { next; }	# Don't even print them out
     else { print; next; }		# At least print them out
 }
 $_ =~ tr/\r/\n/d;	# Deletes lame DOS carriage returns
-$_ =~ s/\n/====/;	# Converts newlines to temporary placeholder ====
+$_ =~ s/\n/ ====/;	# Converts newlines to temporary placeholder ====
 
 
 ### Tokenizes punctuation
 if ( $tokenize ) {
  $_ =~ s/([,.;:!?(){}«»#\/])/ $1 /g;	# Pads punctuation w/ spaces
- $_ =~ s/(\d+)/ $1 /g;			# Pads numbers w/ spaces
+ $_ =~ s/(?<!.)(\d+)/ $1 /g;		# Pads numbers w/ spaces
  $_ =~ s/(\s){2,}/$1/g;			# Removes multiple spaces
 }
 
@@ -159,6 +162,11 @@ if ($input_type ne "roman") {
 
 @_ = split(/(?<!mi)\s+(?!hA)/);		# Tokenize
 foreach (@_) {				# Work with each word
+
+if ( m/^====$/ ) { # no need to do much if it's a newline character
+    $full_line .= "\n";
+    next;
+}
 
 
 if ( $unvowel ) {
@@ -296,13 +304,13 @@ if ( $pos ) {
  $_ =~ m/n\+_/g            and $_ .= "+NEG";      # Negative 'na'
  $_ =~ m/mi-?\+_/g         and $_ .= "+DUR";      # Durative 'mi'
  $_ =~ m/_\+[dt](?!_\+h)/g and $_ .= "+PAST";     # Past tense 'd/t'
- $_ =~ m/_\+m/g            and $_ .= "+1S";  # 1 person singular 'am'
- $_ =~ m/_\+im/g           and $_ .= "+1P";  # 1 person plural 'im'
- $_ =~ m/_\+id/g           and $_ .= "+2P";  # 2 person plural 'id'
- $_ =~ m/_\+nd/g           and $_ .= "+3P";  # 3 person plural 'nd'
- $_ =~ m/_\+mAn/g          and $_ .= "+1P.ACC";  # 1 person plural accusative 'emAn'
- $_ =~ m/_\+tAn/g          and $_ .= "+2P.ACC";  # 2 person plural accusative 'etAn'
- $_ =~ m/_\+CAn/g          and $_ .= "+3P.ACC";  # 3 person plural accusative 'eshAn'
+ $_ =~ m/_\+m/g            and $_ .= "+1S";       # 1 person singular 'am'
+ $_ =~ m/_\+im/g           and $_ .= "+1P";       # 1 person plural 'im'
+ $_ =~ m/_\+id/g           and $_ .= "+2P";       # 2 person plural 'id'
+ $_ =~ m/_\+nd/g           and $_ .= "+3P";       # 3 person plural 'nd'
+ $_ =~ m/_\+mAn/g          and $_ .= "+1P.ACC";   # 1 person plural accusative 'emAn'
+ $_ =~ m/_\+tAn/g          and $_ .= "+2P.ACC";   # 2 person plural accusative 'etAn'
+ $_ =~ m/_\+CAn/g          and $_ .= "+3P.ACC";   # 3 person plural accusative 'eshAn'
 
  $_ =~ m/_\+[dt]n/g    and $_ .= "+INF";  # Infinitive 'dan/tan'
  $_ =~ m/_\+ndh/g      and $_ .= "+PRPT"; # Present participle 'andeh'
@@ -317,11 +325,11 @@ if ( $pos ) {
  $_ =~ m/_\+-?hA/g and $_ .= "+PL";      # Plural 'hA'
  $_ =~ m/_\+An/g   and $_ .= "+PL+ANIM"; # Plural 'An'
  $_ =~ m/_\+At/g   and $_ .= "+PL";      # Plural 'At'
- $_ =~ m/_\+e/g    and $_ .= "+EZ";    # Ezafe 'e'
- $_ =~ m/_\+C/g    and $_ .= "+3S.PC"; # 3 person singular pronominal clitic 'esh'
- $_ =~ m/_\+mAn/g  and $_ .= "+1P.PC"; # 1 person plural pronominal clitic 'emAn'
- $_ =~ m/_\+tAn/g  and $_ .= "+2P.PC"; # 2 person plural pronominal clitic 'etAn'
- $_ =~ m/_\+CAn/g  and $_ .= "+3P.PC"; # 3 person plural pronominal clitic 'eshAn'
+ $_ =~ m/_\+e/g    and $_ .= "+EZ";      # Ezafe 'e'
+ $_ =~ m/_\+C/g    and $_ .= "+3S.PC";   # 3 person singular pronominal clitic 'esh'
+ $_ =~ m/_\+mAn/g  and $_ .= "+1P.PC";   # 1 person plural pronominal clitic 'emAn'
+ $_ =~ m/_\+tAn/g  and $_ .= "+2P.PC";   # 2 person plural pronominal clitic 'etAn'
+ $_ =~ m/_\+CAn/g  and $_ .= "+3P.PC";   # 3 person plural pronominal clitic 'eshAn'
  $_ .= "$punct";
  }
 
@@ -390,18 +398,22 @@ if ($output_type ne "roman") {
 
  if ($output_type eq "utf8" && m/[^ \n]/) { # If utf8 & non-empty
    binmode(STDOUT, ":utf8"); # Uses the :utf8 output layer
-   s/====/\n/g && print "$_" or print "$_ ";
+   $full_line .= "$_ ";
  }
  elsif ( /[^ \n]/ ) { # if arabic-script line is non-empty
-   s/====/\n/g && print "$_" or print "$_ ";
+   $full_line .= "$_ ";
  }
 } # ends if ($output_type ne "roman") -- for non-roman input
 elsif ( /[^ \n]/ ) { # if roman-script line is non-empty
-    s/====/\n/g && print "$_" or print "$_ ";
+    $full_line .= "$_ ";
 }
 
 
 } # ends foreach @_
+
+$full_line =~ s/ $//;
+print $full_line;
+
 } # ends while (<>)
 
 
