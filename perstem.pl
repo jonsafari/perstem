@@ -10,16 +10,19 @@ use strict;
 #use diagnostics;
 use Getopt::Long;
 
-my $version        = "1.0.1";
-my $date           = "2010-05-19";
+my $version        = "1.1.0";
+my $date           = "2010-07-11";
 my $copyright      = "(c) 2004-2010  Jon Dehdari - GPL v3";
 my $title          = "Perstem: Persian stemmer $version, $date - $copyright";
 my ( $dont_stem, $input_type, $output_type, $no_roman, $pos, $recall, $show_links, $show_only_stem, $skip_comments, $tokenize, $unvowel, $zwnj )  = undef;
-my ( $pos_v, $pos_n, $pos_aj )  = undef;
+my ( $pos_v, $pos_n, $pos_aj, $pos_other, $before_resolve )  = undef;
 my $ar_chars       = "EqHSTDZLVU";
 #my $al             = "AbptVjcHxdLrzJsCSDTZEGfqkglmnuhiaoe\x5d\x7cPkMXIUN~";
 #my $longvowel     = "Aui]";
 my %resolve;
+
+### Defaults
+my $pos_sep = '/';
 
 my $usage       = <<"END_OF_USAGE";
 ${title}
@@ -37,6 +40,7 @@ Options:
   -n, --noroman          Delete all non-Arabic script characters (eg. HTML tags)
   -o, --output <type>    Output character encoding type {arabtex,cp1256,isiri3342,utf8,unihtml}
   -p, --pos              Tag words for parts of speech
+      --pos-sep <char>   Separate words from their parts of speech by <char> (default: "$pos_sep" )
   -r, --recall           Increase recall by parsing ambiguous affixes; may lower precision
       --skip-comments    Skip commented-out lines, without printing them
   -s, --stem             Return only word stems
@@ -56,6 +60,7 @@ GetOptions(
     'n|noroman'     => \$no_roman,
     'o|output:s'    => \$output_type,
     'p|pos'	    => \$pos,
+    'pos-sep:s'     => \$pos_sep,
     'r|recall'	    => \$recall,
     'skip-comments' => \$skip_comments,
 #    's|stoplist:s'  => \$resolve_file,
@@ -82,7 +87,7 @@ while (my $resolve = <DATA>) {
     next if $resolve =~ /^#/;
     chomp $resolve;
     my @resolve = split /\t/, $resolve;
-    $resolve{"$resolve[0]"} = "$resolve[1]";
+    $resolve{"$resolve[0]"} = [$resolve[1], $resolve[2]];
 }
 
 
@@ -186,9 +191,17 @@ if ( $zwnj ) {
 
 unless ($dont_stem){ # Do stemming regexes unless $dont_stem is true
 
-( $pos_v, $pos_n, $pos_aj )  = undef;
+( $pos_v, $pos_n, $pos_aj, $pos_other)  = undef;
 
-if ( $resolve{$_} ) { $_ = $resolve{$_} } # word is found in Resolve section
+if ( $resolve{$_} ) { # word is found in Resolve section
+    if    ($resolve{$_}[1] eq 'V') { $pos_v  = 1; }
+    elsif ($resolve{$_}[1] eq 'N') { $pos_n  = 1; }
+    elsif ($resolve{$_}[1] eq 'A') { $pos_aj = 1; }
+    elsif ($resolve{$_}[1] ) { $pos_other = 1; }
+
+    $before_resolve = $_;	# we'll need the original string for POS assignment later
+    $_ = $resolve{$_}[0];
+}
 else {
 
 ## If these regular expressions are readable to you, you need to check-in to a psychiatric ward!
@@ -298,19 +311,19 @@ if ( $show_only_stem ) {
 if ( $pos ) {
 ## Verbal ##
  if ( $pos_v ) {
- $_ =~ s/^(\P{Po}*)(.*?)$/$1\/V/;
+ $_ =~ s/^(\P{Po}*)(.*?)$/$1${pos_sep}V/;
  my $punct = $2;
  $_ =~ m/b\+_/g            and $_ .= "+SBJN-IMP"; # Subjunctive/imperative 'be'
  $_ =~ m/n\+_/g            and $_ .= "+NEG";      # Negative 'na'
  $_ =~ m/mi-?\+_/g         and $_ .= "+DUR";      # Durative 'mi'
- $_ =~ m/_\+[dt](?!_\+h)/g and $_ .= "+PAST";     # Past tense 'd/t'
- $_ =~ m/_\+m/g            and $_ .= "+1S";       # 1 person singular 'am'
- $_ =~ m/_\+im/g           and $_ .= "+1P";       # 1 person plural 'im'
- $_ =~ m/_\+id/g           and $_ .= "+2P";       # 2 person plural 'id'
- $_ =~ m/_\+nd/g           and $_ .= "+3P";       # 3 person plural 'nd'
- $_ =~ m/_\+mAn/g          and $_ .= "+1P.ACC";   # 1 person plural accusative 'emAn'
- $_ =~ m/_\+tAn/g          and $_ .= "+2P.ACC";   # 2 person plural accusative 'etAn'
- $_ =~ m/_\+CAn/g          and $_ .= "+3P.ACC";   # 3 person plural accusative 'eshAn'
+ $_ =~ m/_\+[dt](?!_\+h)/g and $_ .= "+PST";      # Past tense 'd/t'
+ $_ =~ m/_\+m/g            and $_ .= "+1.SG";     # 1 person singular 'am'
+ $_ =~ m/_\+im/g           and $_ .= "+1.PL";     # 1 person plural 'im'
+ $_ =~ m/_\+id/g           and $_ .= "+2.PL";     # 2 person plural 'id'
+ $_ =~ m/_\+nd/g           and $_ .= "+3.PL";     # 3 person plural 'nd'
+ $_ =~ m/_\+mAn/g          and $_ .= "+1.PL.ACC"; # 1 person plural accusative 'emAn'
+ $_ =~ m/_\+tAn/g          and $_ .= "+2.PL.ACC"; # 2 person plural accusative 'etAn'
+ $_ =~ m/_\+CAn/g          and $_ .= "+3.PL.ACC"; # 3 person plural accusative 'eshAn'
 
  $_ =~ m/_\+[dt]n/g    and $_ .= "+INF";  # Infinitive 'dan/tan'
  $_ =~ m/_\+ndh/g      and $_ .= "+PRPT"; # Present participle 'andeh'
@@ -320,25 +333,32 @@ if ( $pos ) {
 
 ## Nominal ##
  if ( $pos_n ) {
- $_ =~ s/^(\P{Po}*)(.*?)$/$1\/N/;
+ $_ =~ s/^(\P{Po}*)(.*?)$/$1${pos_sep}N/;
  my $punct = $2;
  $_ =~ m/_\+-?hA/g and $_ .= "+PL";      # Plural 'hA'
- $_ =~ m/_\+An/g   and $_ .= "+PL+ANIM"; # Plural 'An'
+ $_ =~ m/_\+An/g   and $_ .= "+PL.ANIM"; # Plural 'An'
  $_ =~ m/_\+At/g   and $_ .= "+PL";      # Plural 'At'
  $_ =~ m/_\+e/g    and $_ .= "+EZ";      # Ezafe 'e'
- $_ =~ m/_\+C/g    and $_ .= "+3S.PC";   # 3 person singular pronominal clitic 'esh'
- $_ =~ m/_\+mAn/g  and $_ .= "+1P.PC";   # 1 person plural pronominal clitic 'emAn'
- $_ =~ m/_\+tAn/g  and $_ .= "+2P.PC";   # 2 person plural pronominal clitic 'etAn'
- $_ =~ m/_\+CAn/g  and $_ .= "+3P.PC";   # 3 person plural pronominal clitic 'eshAn'
+ $_ =~ m/_\+C/g    and $_ .= "+3.SG.PC"; # 3 person singular pronominal clitic 'esh'
+ $_ =~ m/_\+mAn/g  and $_ .= "+1.PL.PC"; # 1 person plural pronominal clitic 'emAn'
+ $_ =~ m/_\+tAn/g  and $_ .= "+2.PL.PC"; # 2 person plural pronominal clitic 'etAn'
+ $_ =~ m/_\+CAn/g  and $_ .= "+3.PL.PC"; # 3 person plural pronominal clitic 'eshAn'
  $_ .= "$punct";
  }
 
 ## Adjectival ##
  if ( $pos_aj ) {
+ $_ =~ s/^(\P{Po}*)(.*?)$/$1${pos_sep}AJ/;
  my $punct = $2;
- $_ =~ s/^(\P{Po}*)(.*?)$/$1\/AJ/;
- $_ =~ m/_\+tr/g   and $_ .= "+COMPR"; # Comparative 'tar'
- $_ =~ m/_\+trin/g and $_ .= "+SUPR";  # Superlative 'tarin'
+ $_ =~ m/_\+tr/g   and $_ .= "+CMPR"; # Comparative 'tar'
+ $_ =~ m/_\+trin/g and $_ .= "+SUPR"; # Superlative 'tarin'
+ $_ .= "$punct";
+ }
+
+## Other parts-of-speech
+ if ( $pos_other ) {
+ $_ =~ s/^(\P{Po}*)(.*?)$/$1$pos_sep$resolve{$before_resolve}[1]/;
+ my $punct = $2;
  $_ .= "$punct";
  }
 } # ends if $pos
@@ -445,153 +465,151 @@ __DATA__
 #tA	
 #digr	
 #iA	
-#|mA
-#|gr
-#hr
-#ps
-#ch
-#iki
-#hic
-#uli
-#nh
-#|st
-#hA
-#bi
-#|i
-#br
-u	u
-dr	dr
-bh	bh
-|z	|z
-kh	kh
-|in	|in
-mi	mi
-rA	rA
-bA	bA
-hA	hA
-]n	]n
-ik	ik
+#|mA	
+#|gr	
+#hr	
+#ps	
+#ch	
+#iki	
+#hic	
+#uli	
+#nh	
+#|st	
+#hA	
+#bi	
+#|i	
+#br	
+u	u	CONJ
+iA	iA	CONJ
+|mA	|mA	CONJ
+uli	uli	CONJ
+dr	dr	P
+bh	bh	P
+|z	|z	P
+bA	bA	P
+tA	tA	P
+bi	bi	P
+br	br	P
+br	br	P
+rui	ru_+e	P
+Hti	Hti	P
+sui	su_+e	P
+kh	kh	C
+|in	|in	DT
+]n	]n	DT
+ik	ik	DT
+hr	hr	DT
+rA	rA	ACC
+rAi	rA_+e	ACC
+mi	mi	MORPH
+hA	hA	MORPH
+|i	|i	MORPH
 hm	hm
-mn	mn
-tu	tu
-|u	|u
-mA	mA
-CmA	CmA
-tA	tA
-digr	digr
-iA	iA
-|mA	|mA
+mn	mn	PRON
+tu	tu	PRON
+|u	|u	PRON
+mA	mA	PRON
+CmA	CmA	PRON
+|iCAn	|iCAn	PRON
+]nhA	]nhA	PRON
+]nAn	]nAn	PRON
+iki	iki	PRON
 |gr	|gr
-hr	hr
 ps	ps
 ch	ch
-iki	iki
 hic	hic
-uli	uli
 nh	nh
-|st	|st
-hA	hA
-bi	bi
-|i	|i
-br	br
-|iCAn	|iCAn
-]nhA	]nhA
-]nAn	]nAn
-bArAn	bArAn
-thrAn	thrAn
-tim	tim
-hfth	hfth
-kihAn	kihAn
-Hti	Hti
-zndgi	zndgi
-sAzmAn	sAzmAn
-EnuAn	EnuAn
-nZAm	nZAm
-jhAn	jhAn
-pAiAn	pAiAn
-biCtr	biCtr
-miAn	miAn
+bArAn	bArAn	N
+tim	tim	N
+hfth	hfth	N
+kihAn	kihAn	N
+zndgi	zndgi	N
+sAzmAn	sAzmAn	N
+EnuAn	EnuAn	N
+nZAm	nZAm	N
+jhAn	jhAn	N
+pAiAn	pAiAn	N
+miAn	miAn	N
+biCtr	biCtr	A
+digr	digr	A
+]indh	]i_+ndh	A
 frhngi	frhngi
 tnhA	tnhA
-|ntxAbAt	|ntxAbAt
-|stfAdh	|stfAdh
-iAzdh	iAzdh
-duAzdh	duAzdh
-pAnzdh	pAnzdh
-sizdh	sizdh
-CAnzdh	CAnzdh
-nuzdh	nuzdh
+|ntxAbAt	|ntxAbAt	N
+|stfAdh	|stfAdh	N
+iAzdh	iAzdh	NUM
+duAzdh	duAzdh	NUM
+pAnzdh	pAnzdh	NUM
+sizdh	sizdh	NUM
+CAnzdh	CAnzdh	NUM
+nuzdh	nuzdh	NUM
+miliArd	miliArd	NUM
 frxndh	frxndh
-]mrikA	]mrikA
-rIis	rIis
+rIis	rIis	N
 xndh	xndh
-lndn	lndn
-mEdn	mEdn
+lndn	lndn	N
+mEdn	mEdn	N
 tmdn	tmdn
-|rdn	|rdn
-grdn	grdn
+grdn	grdn	N
 lAdn	lAdn
 kudn	kudn
 mAdh	mAdh
-miliArd	miliArd
-kilumtr	kilumtr
+kilumtr	kilumtr	N
 jAdh	jAdh
-|st	|st
-bud	bud
-br	br
-ktb	ktAb
-|fkAr	fkr
+ktb	ktAb	N
+|fkAr	fkr	N
 |EDA	EDu
-|fGAnstAn	|fGAnstAn
-pArlmAn	pArlmAn
+|fGAnstAn	|fGAnstAn	N
+|slAmi	|slAm_+i	N
+|rdn	|rdn	N
+]mrikA	]mrikA	N
+]mrikAii	]mrikA_+i
+|nsAni	|nsAn_+i	N
+thrAn	thrAn	N
+pArlmAn	pArlmAn	N
+zbAnhAi	zbAn_+hA_+e	N
+zbAnhA	zbAn_+hA	N
+kCurhAi	kCur_+hA_+e	N
+kCurhA	kCur_+hA	N
+mrdm	mrd_+m	N
+dftr	dftr	N
+dfAtr	dftr	N
+dktr	dktr	N
+jAi	jA_+e	N
+uqt	uqt	N
 mrA	mn rA
 trA	tu rA
 cist	ch |st
-krdn	kr_+dn
-Cdh	C_+d_+h
-krdh	kr_+d_+h
-mrdm	mrd_+m
-dAdh	dA_+d_+h
-budh	bu_+d_+h
-zbAnhAi	zbAn_+hA_+e
-zbAnhA	zbAn_+hA
-budh	bu_+d_+h
-gLCth	gLC_+t_+h
-budnd	bud_+nd
-dACth	dAC_+t_+h
-krdnd	krd_+nd
-rui	ru_+e
-kCurhAi	kCur_+hA_+e
-kCurhA	kCur_+hA
-sui	su_+e
-grfth	grf_+t_+h
-Cdn	C_+dn
-]indh	]i_+ndh
-dftr	dftr
-dfAtr	dfAtr
-dktr	dktr
-sAxth	sAx_+t_+h
-]mdh	]m_+d_+h
-rAi	rA_+e
-jAi	jA_+e
-uqt	uqt
-gLACth	gLAC_+t_+h
-budn	bu_+dn
-nCdh	n+_C_+d_+h
-didn	di_+dn
-didh	di_+d_+h
-dAdn	dA_+dn
-zdh	z_+d_+h
-zdnd	z_+d_+nd
-dAdnd	dAd_+nd
-|slAmi	|slAm_+i
-knnd	kn_+nd
-knd	kn_+d
-Cud	Cu_+d
-dhd	dh_+d
-dArd	dAr_+d
-xuAhd	xuAh_+d
-nist	n+_|st
 kjAst	kjA+_|st
-]mrikAii	]mrikA_+i
-|nsAni	|nsAn_+i
+xuAhd	xuAh_+d	AUX
+|st	|st	V
+]mdh	]m_+d_+h	V
+bud	bud	V
+budh	bu_+d_+h	V
+budh	bu_+d_+h	V
+budn	bu_+dn	V
+budnd	bu_+d_+nd	V
+Cdh	C_+d_+h	V
+Cdn	C_+dn	V
+Cud	Cu_+d	V
+dACth	dAC_+t_+h	V
+dAdh	dA_+d_+h	V
+dAdn	dA_+dn	V
+dAdnd	dA_+d_+nd	V
+dArd	dAr_+d	V
+dhd	dh_+d	V
+didn	di_+dn	V
+didh	di_+d_+h	V
+gLACth	gLAC_+t_+h	V
+gLCth	gLC_+t_+h	V
+grfth	grf_+t_+h	V
+knnd	kn_+nd	V
+knd	kn_+d	V
+krdn	kr_+dn	V
+krdh	kr_+d_+h	V
+krdnd	kr_+d_+nd	V	V
+nCdh	n+_C_+d_+h	V
+nist	n+_|st	V
+sAxth	sAx_+t_+h	V
+zdh	z_+d_+h	V
+zdnd	z_+d_+nd	V
