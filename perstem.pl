@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# Written by Jon Dehdari 2004-2010
+# Written by Jon Dehdari 2004-2012
 # Perl 5.8+
 # Perstem:  Stemmer and Morphological Parser for Persian
 # The license is the GPL v.3 (www.fsf.org)
@@ -10,9 +10,9 @@ use strict;
 #use diagnostics;
 use Getopt::Long;
 
-my $version        = "1.1.0";
-my $date           = "2010-07-11";
-my $copyright      = "(c) 2004-2010  Jon Dehdari - GPL v3";
+my $version        = "1.1.1";
+my $date           = "2012-02-25";
+my $copyright      = "(c) 2004-2012  Jon Dehdari - GPL v3";
 my $title          = "Perstem: Persian stemmer $version, $date - $copyright";
 my ( $dont_stem, $input_type, $output_type, $no_roman, $pos, $recall, $show_links, $show_only_stem, $skip_comments, $tokenize, $unvowel, $zwnj )  = undef;
 my ( $pos_v, $pos_n, $pos_aj, $pos_other, $before_resolve )  = undef;
@@ -171,6 +171,9 @@ foreach (@_) {				# Work with each word
 if ( m/^====$/ ) { # no need to do much if it's a newline character
     $full_line .= "\n";
     next;
+}
+elsif ( m/mi ====$/ ) { # Special case if line ends with "mi"
+	$_ =~ s/mi ====$/mi\n/g;
 }
 
 
