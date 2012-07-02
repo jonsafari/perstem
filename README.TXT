@@ -30,6 +30,12 @@ Options:
                          For example, 'mixurnd' would appear as 'mi- xur nd'.
 
 
+
+Acknowledgement: Thanks to Jace Livingston, David Zajic, and Corey Miller for their
+                 comprehensive error analysis and other suggestions.
+
+
+
 Romanized input table:
 
 Roman	Unicode-Name
