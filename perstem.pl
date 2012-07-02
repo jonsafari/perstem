@@ -10,11 +10,11 @@ use strict;
 #use diagnostics;
 use Getopt::Long;
 
-my $version        = "1.2.1";
+my $version        = "1.2.2b1";
 my $date           = "2012-07-02";
 my $copyright      = "(c) 2004-2012  Jon Dehdari - GPL v3";
 my $title          = "Perstem: Persian stemmer $version, $date - $copyright";
-my ( $dont_stem, $flush, $input_type, $output_type, $no_roman, $pos, $recall, $show_links, $show_only_stem, $skip_comments, $tokenize, $unvowel, $zwnj )  = undef;
+my ( $dont_stem, $flush, $no_roman, $pos, $recall, $show_links, $show_only_stem, $skip_comments, $tokenize, $unvowel, $zwnj )  = undef;
 my ( $pos_v, $pos_n, $pos_aj, $pos_other, $before_resolve )  = undef;
 my $ar_chars       = "EqHSTDZLVU";
 #my $longvowel     = "Aui]";
@@ -22,6 +22,9 @@ my %resolve;
 
 ### Defaults
 my $pos_sep = '/';
+my $input_type = "roman";	# default is roman input
+my $output_type = "roman";	# default is roman output
+
 
 my $usage       = <<"END_OF_USAGE";
 ${title}
@@ -130,22 +133,19 @@ if ( $tokenize ) {
 
 ### Converts from native script to romanized transliteration
 if ($input_type ne "roman") {
+ ## Preserve Latin characters by temporarily mapping them to their circled unicode counterparts, or other doppelgaenger chars
+ ## \x5d == "]"  \x7c == "|"
+ tr/a-zA-Z\x5d\x7c~,;?%*\-]+/ⓐ-ⓩⒶ-Ⓩ⁆‖⁓‚;⁇‰⁎‐⌉✢/;
 
  if ($no_roman) {
   s/<br>/\n/g;
   s/<p>/\n/g;
   tr/\x01-\x09\x1b-\x1f\x21-\x2d\x2f-\x5a\x5c\x5e-\x9f//d; # Deletes all chars below xa0 except: 0a,20,2e,5b,5d
-#  s/<\.>//g;  # Deletes all dots in HTML tags
-#  s/<.*?>//g; # Deletes all HTML tags on 1 line
-#  s/<.*?//g;  # Deleses 1st part of line-spanning HTML tags
-#  s/.*?>//g;  # Deletes 2nd part of line-spanning HTML tags
  }
 
  if ($input_type eq "utf8") {
-     if ($output_type eq "roman") { # preserve Latin characters by surrounding them with pseudo-quotes
-         s/([a-zA-Z\x5d\x7c~,;?%*\-]+)/˹${1}˺/g;
-     }
-  tr/اأبپتثجچحخدذرزژسشصضطظعغفقكگلمنوهيَُِآ☿ةکیءىۀئؤًّ،؛؟٪‍‌/ABbptVjcHxdLrzJsCSDTZEGfqkglmnuhiaoe\x5d\x7cPkiMiXIUN~,;?%*\-/; }
+  tr/اأبپتثجچحخدذرزژسشصضطظعغفقكگلمنوهيَُِآ☿ةکیءىۀئؤًّ،؛؟٪‍‌/ABbptVjcHxdLrzJsCSDTZEGfqkglmnuhiaoe\x5d\x7cPkiMiXIUN~,;?%*\-/;
+ }
 
  elsif ($input_type eq "unihtml") {
    my %unihtml2roman = (
@@ -388,12 +388,8 @@ unless ( $show_links ) {
 ### Converts from romanized transliteration to native script
 if ($output_type ne "roman") {
  if ($output_type eq "utf8") {
-     if ($input_type eq "roman") { # remove the pseudo-quotes around the preserved Latin characters
-         s/˹(.+?)˺/$1/g;
-     }
   tr/ABbptVjcHxdLrzJsCSDTZEGfqKglmnuhyaoe\x5d\x7cPkiMXIUN~,;?%*\-/اأبپتثجچحخدذرزژسشصضطظعغفقكگلمنوهيَُِآاةکیءۀئؤًّ،؛؟٪‍‌/;
-#  s/\./‫.‪/g; # Corrects periods to be RTL embedded
-  }
+ }
 
  elsif ($output_type eq "unihtml") {
    my %roman2unihtml = (
@@ -428,6 +424,10 @@ if ($output_type ne "roman") {
 #  $_ = $_ . '\\\\'; # Appends LaTeX newline '\\' after each line
  }  # ends elsif (arabtex)
 
+ ## Restore temporary Latin doppelgaenger characters to their normal forms
+ ## \x5d == "]"  \x7c == "|"
+ tr/ⓐ-ⓩⒶ-Ⓩ⁆‖⁓‚;⁇‰⁎‐⌉✢/a-zA-Z\x5d\x7c~,;?%*\-]+/;
+
  if ($output_type eq "utf8" && m/[^ \n]/) { # If utf8 & non-empty
    binmode(STDOUT, ":utf8"); # Uses the :utf8 output layer
    $full_line .= "$_ ";
@@ -435,6 +435,7 @@ if ($output_type ne "roman") {
  elsif ( /[^ \n]/ ) { # if arabic-script line is non-empty
    $full_line .= "$_ ";
  }
+
 } # ends if ($output_type ne "roman") -- for non-roman input
 elsif ( /[^ \n]/ ) { # if latin-script line is non-empty
     $full_line .= "$_ ";
