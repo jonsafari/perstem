@@ -10,11 +10,11 @@ use strict;
 #use diagnostics;
 use Getopt::Long;
 
-my $version        = "1.1.1";
-my $date           = "2012-02-25";
+my $version        = "1.2b5";
+my $date           = "2012-06-17";
 my $copyright      = "(c) 2004-2012  Jon Dehdari - GPL v3";
 my $title          = "Perstem: Persian stemmer $version, $date - $copyright";
-my ( $dont_stem, $input_type, $output_type, $no_roman, $pos, $recall, $show_links, $show_only_stem, $skip_comments, $tokenize, $unvowel, $zwnj )  = undef;
+my ( $dont_stem, $flush, $input_type, $output_type, $no_roman, $pos, $recall, $show_links, $show_only_stem, $skip_comments, $tokenize, $unvowel, $zwnj )  = undef;
 my ( $pos_v, $pos_n, $pos_aj, $pos_other, $before_resolve )  = undef;
 my $ar_chars       = "EqHSTDZLVU";
 #my $al             = "AbptVjcHxdLrzJsCSDTZEGfqkglmnuhiaoe\x5d\x7cPkMXIUN~";
@@ -34,12 +34,13 @@ Function: Stemmer and morphological analyzer for the Persian language (Farsi).
 
 Options:
   -d, --nostem           Don't stem -- mostly for character-set conversion
+      --flush            Autoflush buffer output after every line
   -h, --help             Print usage
   -i, --input <type>     Input character encoding type {cp1256,isiri3342,utf8,unihtml}
   -l, --links            Show morphological links
   -n, --noroman          Delete all non-Arabic script characters (eg. HTML tags)
   -o, --output <type>    Output character encoding type {arabtex,cp1256,isiri3342,utf8,unihtml}
-  -p, --pos              Tag words for parts of speech
+  -p, --pos              Tag inflected words for parts of speech
       --pos-sep <char>   Separate words from their parts of speech by <char> (default: "$pos_sep" )
   -r, --recall           Increase recall by parsing ambiguous affixes; may lower precision
       --skip-comments    Skip commented-out lines, without printing them
@@ -54,6 +55,7 @@ END_OF_USAGE
 
 GetOptions(
     'd|nostem'      => \$dont_stem,
+    'flush'         => \$flush,
     'h|help|?'      => sub { print $usage; exit; },
     'i|input:s'     => \$input_type,
     'l|links'       => \$show_links,
@@ -103,6 +105,9 @@ elsif ($output_type eq "utf8") { # UTF-8 output
 else { unimport encoding "utf8";}
 
 
+### Autoflush buffers, for piping STDOUT
+$| = 1  if $flush;
+
 while ($_ = <> ) {
 
 my $full_line;
@@ -144,7 +149,7 @@ if ($input_type ne "roman") {
 
  elsif ($input_type eq "unihtml") {
    my %unihtml2roman = (
-'&#1575;' => 'A', '&#9791;' => '|', '&#1571;' => 'B', '&#1576;' => 'b', '&#1577;' => 'P', '&#1662;' => 'p', '&#1578;' => 't', '&#1579;' => 'V', '&#1580;' => 'j', '&#1670;' => 'c', '&#1581;' => 'H', '&#1582;' => 'x', '&#1583;' => 'd', '&#1584;' => 'L', '&#1585;' => 'r', '&#1586;' => 'z', '&#1688;' => 'J', '&#1587;' => 's', '&#1588;' => 'C', '&#1589;' => 'S', '&#1590;' => 'D', '&#1591;' => 'T', '&#1592;' => 'Z', '&#1593;' => 'E', '&#1594;' => 'G', '&#1601;' => 'f', '&#1602;' => 'q', '&#1603;' => 'k', '&#1705;' => 'k', '&#1711;' => 'g', '&#1604;' => 'l', '&#1605;' => 'm', '&#1606;' => 'n', '&#1608;' => 'u', '&#1607;' => 'h', '&#1610;' => 'i', '&#1740;' => 'i', '&#1609;' => 'A', '&#1614;' => 'a', '&#1615;' => 'o', '&#1616;' => 'e', '&#1617;' => '~', '&#1570;' => ']', '&#1569;' => 'M', '&#1611;' => 'N', '&#1571;' => '|', '&#1572;' => 'U', '&#1573;' => '|', '&#1574;' => 'I', '&#1728;' => 'X', '&#1642;' => '%', '&#1548;' => ',', '&#1563;' => ';', '&#1567;' => '?', '&#8204;' => "-", ' ' => ' ', '.' => '.', ':' => ':', );
+'&#1575;' => 'A', '&#9791;' => 'A', '&#1571;' => 'B', '&#1576;' => 'b', '&#1577;' => 'P', '&#1662;' => 'p', '&#1578;' => 't', '&#1579;' => 'V', '&#1580;' => 'j', '&#1670;' => 'c', '&#1581;' => 'H', '&#1582;' => 'x', '&#1583;' => 'd', '&#1584;' => 'L', '&#1585;' => 'r', '&#1586;' => 'z', '&#1688;' => 'J', '&#1587;' => 's', '&#1588;' => 'C', '&#1589;' => 'S', '&#1590;' => 'D', '&#1591;' => 'T', '&#1592;' => 'Z', '&#1593;' => 'E', '&#1594;' => 'G', '&#1601;' => 'f', '&#1602;' => 'q', '&#1603;' => 'k', '&#1705;' => 'k', '&#1711;' => 'g', '&#1604;' => 'l', '&#1605;' => 'm', '&#1606;' => 'n', '&#1608;' => 'u', '&#1607;' => 'h', '&#1610;' => 'i', '&#1740;' => 'i', '&#1609;' => 'A', '&#1614;' => 'a', '&#1615;' => 'o', '&#1616;' => 'e', '&#1617;' => '~', '&#1570;' => ']', '&#1569;' => 'M', '&#1611;' => 'N', '&#1571;' => 'A', '&#1572;' => 'U', '&#1573;' => 'A', '&#1574;' => 'I', '&#1728;' => 'X', '&#1642;' => '%', '&#1548;' => ',', '&#1563;' => ';', '&#1567;' => '?', '&#8204;' => "-", ' ' => ' ', '.' => '.', ':' => ':', );
   my @charx = split(/(?=\&\#)|(?=\s)|(?=\n)/, $_);
   $_ = "";
   foreach my $charx (@charx)
@@ -160,8 +165,8 @@ if ($input_type ne "roman") {
  elsif ($input_type eq "isiri3342") {
   $_ =~ tr/\xc1\xf8\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc\xcd\xce\xcf\xd0\xd1\xd2\xd3\xd4\xd5\xd6\xd7\xd8\xd9\xda\xdb\xdc\xdd\xde\xdf\xe0\xfe\xf0\xf2\xf1\xc0\xc1\xfc\xda\xe1\xc2\xfb\xfa\xf3\xf6\xac\xbb\xbf\xa5\xe7\xe6\xa1/ABbptVjcHxdLrzJsCSDTZEGfqKglmnuhyaoe\x5d\x7cPkiMIUN~,;?%{}\-/; }
 
- $_ =~ s/\bA/|/g; # eg. AirAn -> |irAn
- $_ =~ s/˹\|/˹A/g;
+ #$_ =~ s/\bA/|/g; # eg. AirAn -> |irAn
+ #$_ =~ s/˹\|/˹A/g;
 } # if ($input_type)
 
 
@@ -178,18 +183,20 @@ elsif ( m/mi ====$/ ) { # Special case if line ends with "mi"
 
 
 if ( $unvowel ) {
- $_ =~ s/\b([aeo])/|/g; # Inserts alef before words that begin with short vowel
+ $_ =~ s/\b([aeo])/A/g; # Inserts alef before words that begin with short vowel
  $_ =~ s/\bA/]/g;       # Changes long 'aa' at beginning of word to alef madda
  $_ =~ s/[aeo~]//g;     # Finally, removes all other short vowels and tashdids
 }
 
 #Inserts ZWNJ's where they should have been originally, but weren't
 if ( $zwnj ) {
- $_ =~ s/(?<![a-zA-Z|])mi /mi-/g;    # 'mi-'
- $_ =~ s/(?<![a-zA-Z|])nmi /nmi-/g;  # 'mi-'
- $_ =~ s/ hA(?![a-zA-Z|])/-hA/g;     # '-hA'
- $_ =~ s/ hAi(?![a-zA-Z|])/-hAi/g;   # '-hA'
- $_ =~ s/h \|i(?![a-zA-Z|])/h-\|i/g; # '+h-|i'
+ $_ =~ s/(?<![a-zA-Z])mi /mi-/g;			# 'mi-'
+ $_ =~ s/(?<![a-zA-Z])nmi /nmi-/g;			# 'nmi-'
+ $_ =~ s/(?<![a-zA-Z])nmi(\S{6,})/nmi-$1/g;	# 'nmi-'
+ $_ =~ s/ hA(?![a-zA-Z])/-hA/g;				# '-hA'
+ $_ =~ s/ hAi(?![a-zA-Z])/-hAi/g;			# '-hAi'
+ $_ =~ s/(\S{6,})hAi(?![a-zA-Z])/$1-hAi/g;	# '-hAi'
+ $_ =~ s/h Ai(?![a-zA-Z])/h-Ai/g;			# '+h-Ai'
 }
 
 unless ($dont_stem){ # Do stemming regexes unless $dont_stem is true
@@ -214,10 +221,10 @@ else {
 ##### Verb Section #####
 
 ######## Verb Prefixes ########
-$_ =~ s/\b(?<!\]|\|)n(?![uAi])(\S{2,}?(?:im|id|nd|(?<!A)m|(?<![Au])i|(?<!A)d|(?:r|u|i|A|n|m|z)dn|(?:f|C|x|s)tn)(?:mAn|tAn|CAn|C)?)\b/n+_$1/g; # neg. verb prefix 'n+'
-$_ =~ s/(\bn\+_|\b(?<!\]|\|))mi-(?![uAi])(\S{2,}?(?:im|id|nd|(?<!A)m|(?<!A)i|(?<!A)d)(?:mAn|tAn|CAn|C)?)\b/$1mi-+_$2/g;    # Durative verb prefix 'mi+'
-$_ =~ s/(\bn\+_|\b(?<!\]|\|))mi(?![uAi])(?!-)(\S{2,}?(?:im|id|nd|(?<!A)m|(?<!A)i|(?<!A)d)(?:mAn|tAn|CAn|C)?)\b/$1mi+_$2/g; # Durative verb prefix 'mi+'
-$_ =~ s/\b(?<!\]|\|)b(?![uAir])([^ ]{2,}?(?:im|id|nd|(?<!A)m|(?<!A)i|d)(?:mAn|tAn|CAn|C)?)\b/b+_$1/g;       # Subjunctive verb prefix 'be+'
+$_ =~ s/\b(?<!\]|A)n(?![uAi])(\S{2,}?(?:im|id|nd|(?<!A)m|(?<![Au])i|(?<!A)d|(?:r|u|i|A|n|m|z)dn|(?:f|C|x|s)tn)(?:mAn|tAn|CAn|C)?)\b/n+_$1/g; # neg. verb prefix 'n+'
+$_ =~ s/(\bn\+_|\b(?<!\]|A))mi-(?![uAi])(\S{2,}?(?:im|id|nd|(?<!A)m|(?<!A)i|(?<!A)d)(?:mAn|tAn|CAn|C)?)\b/$1mi-+_$2/g;    # Durative verb prefix 'mi+'
+$_ =~ s/(\bn\+_|\b(?<!\]|A))mi(?![uAi])(?!-)(\S{2,}?(?:im|id|nd|(?<!A)m|(?<!A)i|(?<!A)d)(?:mAn|tAn|CAn|C)?)\b/$1mi+_$2/g; # Durative verb prefix 'mi+'
+$_ =~ s/\b(?<!\]|A)b(?![uAir])([^ ]{2,}?(?:im|id|nd|(?<!A)m|(?<!A)i|d)(?:mAn|tAn|CAn|C)?)\b/b+_$1/g;       # Subjunctive verb prefix 'be+'
 
 ######## Verb Suffixes & Enclitics ########
 $_ =~ s/(\S{2,}?(?:[^+ ]{2}d|[^+ ]{2}(?:s|f|C|x)t|\bn\+_\S{2,}?|mi\+_\S{2,}?|b\+_\S{2,}?)(?:im|id|nd|m|(?<!A|u)i|d))(CAn|tAn|C)\b/$1_+$2/g;   # Verbal Object verb enclitic
@@ -245,7 +252,7 @@ $_ =~ s/_\+t_\+\B/_+t/g;  # temp. until resolve file works
 $_ =~ m/(?:_\+|\+_)/ and $pos_v = 1;
 
 ######## Contractions ########
-$_ =~ s/\b([^+ ]{2,}?)([uAi])st(\p{P})/$1$2 |st$3/g; # normal "[uAi] ast", is often followed by punctuation (eg. mAst vs ...mA |st.)
+$_ =~ s/\b([^+ ]{2,}?)([uAi])st(\p{P})/$1$2 Ast$3/g; # normal "[uAi] ast", is often followed by punctuation (eg. mAst vs ...mA Ast.)
 
 
 ##### Noun Section #####
@@ -259,8 +266,8 @@ $_ =~ s/\b([^+ ]+?)(A|u)i\b/$1$2_+e/g;        # Ezafe preceded by long vowel
 $_ =~ s/\b([^+ ]{2,}?)(hA|-hA)\b/$1_+$2/g;            # Nominal plural suffix
 $_ =~ s/\b([^+ ]{2,}?)(hA|-hA)(_\+\S*?)\b/$1_+$2$3/g; # Nominal plural suffix
 $_ =~ s/\b([^+ ]{4,}?)(?<!st)(An)\b/$1_+$2/g;         # Plural suffix '+An'
-$_ =~ s/\b(\S*?[$ar_chars]\S*?)At\b/$1h/og;           # Arabic plural: +At
-$_ =~ s/\b((?:m|\|)\S*?)At\b/$1h/g;                   # Arabic plural: +At
+$_ =~ s/\b(\S*?[$ar_chars]\S*?)At\b/$1h_+At/og;           # Arabic fem plural: +At
+$_ =~ s/\b((?:m|A)\S*?)At\b/$1h_+At/g;                    # Arabic fem plural: +At
 
 $_ =~ m/_\+/ and $pos_n = 1;
 
@@ -288,11 +295,15 @@ if ( $recall ) {
  $_ =~ s/\b([^+ ]{2,}?(?:f|C|x|s))t(?!\s)\b/$1_+t/g;       # 3rd person singular past verb - unvoiced
 # $_ =~ s/\b(n?)([^+ ]{2,}?)((?<=r|u|i|A|n|m|z)d|(?<=f|C|x|s)t)(?!\s)\b/$1+_$2_+$3/g; # 3rd person singular past verb & neg.
  $_ =~ s/(\S{2,}?(?:[^+ ]{2}d|[^+ ]{2}(?:s|f|C|x)t|\bn\+_\S{2,}?|mi\+_\S{2,}?|b\+_\S{2,}?)(?:im|id|nd|m|(?<!A|u)i|d))mAn\b/$1_+mAn/g;   # Verbal Object verb enclitic +mAn
+$_ =~ s/\b([^+ ]{3,}?)([uAi])st\b/$1$2 Ast/g; # Less restrictive version of above, eg. mAst -> mA Ast, but sentence-final puncutation not necessary
+
 ### Non-verbal ###
- $_ =~ s/\b([^+ ]{3,}?)(?<![Au])i\b/$1_+i/g;        # Indef. '+i' suffix
+ $_ =~ s/\b([^+ ]{3,}?)(?<![Au])i\b/$1_+i/g;        # Indef. '+i' suffix.  This is a very common, but very error-prone suffix.
  $_ =~ s/\b([^+ ]*?[$ar_chars][^+ ]*?)t\b/$1_+t/og; # Arabic fem: +at
  $_ =~ s/\b(m[^+ ]{3,}?)(?<![Aiu])t\b/$1_+t/g;      # Arabic fem: +at
+ $_ =~ s/\b([^+ ]{3,}?)At\b/$1h_+At/g;              # Arabic fem plural: +At
  $_ =~ s/\b([^+ ]{2,}?)([^uAi+ ])(mAn|C)(_\+\S*?)?\b/$1$2_+$3$4/g;     # Genitive pronominal enclitics +mAn or +C
+ $_ =~ s/\b([^+ ]{2,}?)AN\b/$1_+AN/g;               # Arabic adverbial suffix (fathatan)
 }
 
 
@@ -301,8 +312,6 @@ if ( $recall ) {
 
 ### Deletes everything but the stem
 if ( $show_only_stem ) {
-# $_ =~ s/\b[_+$al]*\+_([_+$al]+?)\b/$1/g;  # Removes prefixes
-# $_ =~ s/\b([_+$al]+?)_\+[_+$al]*\b/$1/g;  # Removes suffixes
  $_ =~ s/\b[^ ]+\+_([^ ]+?)\b/$1/g;  # Removes prefixes
  $_ =~ s/\b([^ ]+?)_\+[^ ]+\b/$1/g;  # Removes suffixes
 }
@@ -450,9 +459,9 @@ __DATA__
 #u	
 #dr	
 #bh	
-#|z	
+#Az	
 #kh	
-#|in	
+#Ain	
 #mi	
 #rA	
 #bA	
@@ -462,14 +471,14 @@ __DATA__
 #hm	
 #mn	
 #tu	
-#|u	
+#Au	
 #mA	
 #CmA	
 #tA	
 #digr	
 #iA	
-#|mA	
-#|gr	
+#AmA	
+#Agr	
 #hr	
 #ps	
 #ch	
@@ -477,18 +486,18 @@ __DATA__
 #hic	
 #uli	
 #nh	
-#|st	
+#Ast	
 #hA	
 #bi	
-#|i	
+#Ai	
 #br	
 u	u	CONJ
 iA	iA	CONJ
-|mA	|mA	CONJ
+AmA	AmA	CONJ
 uli	uli	CONJ
 dr	dr	P
 bh	bh	P
-|z	|z	P
+Az	Az	P
 bA	bA	P
 tA	tA	P
 bi	bi	P
@@ -498,7 +507,7 @@ rui	ru_+e	P
 Hti	Hti	P
 sui	su_+e	P
 kh	kh	C
-|in	|in	DT
+Ain	Ain	DT
 ]n	]n	DT
 ik	ik	DT
 hr	hr	DT
@@ -506,18 +515,18 @@ rA	rA	ACC
 rAi	rA_+e	ACC
 mi	mi	MORPH
 hA	hA	MORPH
-|i	|i	MORPH
+Ai	Ai	MORPH
 hm	hm
 mn	mn	PRON
 tu	tu	PRON
-|u	|u	PRON
+Au	Au	PRON
 mA	mA	PRON
 CmA	CmA	PRON
-|iCAn	|iCAn	PRON
+AiCAn	AiCAn	PRON
 ]nhA	]nhA	PRON
 ]nAn	]nAn	PRON
 iki	iki	PRON
-|gr	|gr
+Agr	Agr
 ps	ps
 ch	ch
 hic	hic
@@ -538,8 +547,8 @@ digr	digr	A
 ]indh	]i_+ndh	A
 frhngi	frhngi
 tnhA	tnhA
-|ntxAbAt	|ntxAbAt	N
-|stfAdh	|stfAdh	N
+AntxAbAt	AntxAbAt	N
+AstfAdh	AstfAdh	N
 iAzdh	iAzdh	NUM
 duAzdh	duAzdh	NUM
 pAnzdh	pAnzdh	NUM
@@ -560,14 +569,14 @@ mAdh	mAdh
 kilumtr	kilumtr	N
 jAdh	jAdh
 ktb	ktAb	N
-|fkAr	fkr	N
-|EDA	EDu
-|fGAnstAn	|fGAnstAn	N
-|slAmi	|slAm_+i	N
-|rdn	|rdn	N
+AfkAr	fkr	N
+AEDA	EDu
+AfGAnstAn	AfGAnstAn	N
+AslAmi	AslAm_+i	N
+Ardn	Ardn	N
 ]mrikA	]mrikA	N
 ]mrikAii	]mrikA_+i
-|nsAni	|nsAn_+i	N
+AnsAni	AnsAn_+i	N
 thrAn	thrAn	N
 pArlmAn	pArlmAn	N
 zbAnhAi	zbAn_+hA_+e	N
@@ -582,10 +591,10 @@ jAi	jA_+e	N
 uqt	uqt	N
 mrA	mn rA
 trA	tu rA
-cist	ch |st
-kjAst	kjA+_|st
+cist	ch Ast
+kjAst	kjA+_Ast
 xuAhd	xuAh_+d	AUX
-|st	|st	V
+Ast	Ast	V
 ]mdh	]m_+d_+h	V
 bud	bud	V
 budh	bu_+d_+h	V
@@ -612,7 +621,7 @@ krdn	kr_+dn	V
 krdh	kr_+d_+h	V
 krdnd	kr_+d_+nd	V	V
 nCdh	n+_C_+d_+h	V
-nist	n+_|st	V
+nist	n+_Ast	V
 sAxth	sAx_+t_+h	V
 zdh	z_+d_+h	V
 zdnd	z_+d_+nd	V
