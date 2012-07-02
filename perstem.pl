@@ -10,14 +10,13 @@ use strict;
 #use diagnostics;
 use Getopt::Long;
 
-my $version        = "1.2b5";
+my $version        = "1.2";
 my $date           = "2012-06-17";
 my $copyright      = "(c) 2004-2012  Jon Dehdari - GPL v3";
 my $title          = "Perstem: Persian stemmer $version, $date - $copyright";
 my ( $dont_stem, $flush, $input_type, $output_type, $no_roman, $pos, $recall, $show_links, $show_only_stem, $skip_comments, $tokenize, $unvowel, $zwnj )  = undef;
 my ( $pos_v, $pos_n, $pos_aj, $pos_other, $before_resolve )  = undef;
 my $ar_chars       = "EqHSTDZLVU";
-#my $al             = "AbptVjcHxdLrzJsCSDTZEGfqkglmnuhiaoe\x5d\x7cPkMXIUN~";
 #my $longvowel     = "Aui]";
 my %resolve;
 
