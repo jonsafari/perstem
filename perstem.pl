@@ -142,7 +142,7 @@ if ($input_type ne "roman") {
 
  if ($input_type eq "utf8") {
      if ($output_type eq "roman") { # preserve Latin characters by surrounding them with pseudo-quotes
-	 s/([a-zA-Z\x5d\x7c~,;?%*\-]+)/˹${1}˺/g;
+         s/([a-zA-Z\x5d\x7c~,;?%*\-]+)/˹${1}˺/g;
      }
   $_ =~ tr/اأبپتثجچحخدذرزژسشصضطظعغفقكگلمنوهيَُِآ☿ةکیءىۀئؤًّ،؛؟٪‍‌/ABbptVjcHxdLrzJsCSDTZEGfqkglmnuhiaoe\x5d\x7cPkiMiXIUN~,;?%*\-/; }
 
@@ -177,7 +177,7 @@ if ( m/^====$/ ) { # no need to do much if it's a newline character
     next;
 }
 elsif ( m/mi ====$/ ) { # Special case if line ends with "mi"
-	$_ =~ s/mi ====$/mi\n/g;
+    $_ =~ s/mi ====$/mi\n/g;
 }
 
 
@@ -221,8 +221,8 @@ else {
 
 ######## Verb Prefixes ########
 $_ =~ s/\b(?<!\]|A)n(?![uAi])(\S{2,}?(?:im|id|nd|(?<!A)m|(?<![Au])i|(?<!A)d|(?:r|u|i|A|n|m|z)dn|(?:f|C|x|s)tn)(?:mAn|tAn|CAn|C)?)\b/n+_$1/g; # neg. verb prefix 'n+'
-$_ =~ s/(\bn\+_|\b(?<!\]|A))mi-(?![uAi])(\S{2,}?(?:im|id|nd|(?<!A)m|(?<!A)i|(?<!A)d)(?:mAn|tAn|CAn|C)?)\b/$1mi-+_$2/g;    # Durative verb prefix 'mi+'
-$_ =~ s/(\bn\+_|\b(?<!\]|A))mi(?![uAi])(?!-)(\S{2,}?(?:im|id|nd|(?<!A)m|(?<!A)i|(?<!A)d)(?:mAn|tAn|CAn|C)?)\b/$1mi+_$2/g; # Durative verb prefix 'mi+'
+$_ =~ s/(\bn\+_|\b(?<!\]|A))mi-(?![uAi])(\S{2,}?(?:im|id|nd|(?<!A)m|(?<!A)i|(?<!A)d)(?:mAn|tAn|CAn|C)?)\b/$1mi-+_$2/g;    # Imperfective/durative verb prefix 'mi+'
+$_ =~ s/(\bn\+_|\b(?<!\]|A))mi(?![uAi])(?!-)(\S{2,}?(?:im|id|nd|(?<!A)m|(?<!A)i|(?<!A)d)(?:mAn|tAn|CAn|C)?)\b/$1mi+_$2/g; # Imperfective/durative verb prefix 'mi+'
 $_ =~ s/\b(?<!\]|A)b(?![uAir])([^ ]{2,}?(?:im|id|nd|(?<!A)m|(?<!A)i|d)(?:mAn|tAn|CAn|C)?)\b/b+_$1/g;       # Subjunctive verb prefix 'be+'
 
 ######## Verb Suffixes & Enclitics ########
@@ -237,8 +237,8 @@ $_ =~ s/(\S+?)(s|f|C|x)t_\+(nd|id|im|d|i|m)(_\+\S*?)?\b/$1$2_+t_+$3$4/g;  # Verb
 $_ =~ s/\b(\S{2,}?)(r|u|i|A|n|m)dn\b/$1$2_+dn/g;               # Verbal Infinitive '+dan'
 $_ =~ s/\b(\S{2,}?)(f|C|x|s)tn\b/$1$2_+tn/g;                   # Verbal Infinitive '+tan'
 $_ =~ s/\b(\S{2,}?)(i|n|A|u|z|r|b|h|s|k|C|f)ndh\b/$1$2_+ndh/g; # Verbal present participle '+andeh'
-$_ =~ s/\b(\S{2,}?)(C|r|n|A|u|i|m|z)dh\b/$1$2_+d_+h/g;         # Verbal past participle '+deh'
-$_ =~ s/\b(\S{2,}?)(C|f|s|x)th\b/$1$2_+t_+h/g;                 # Verbal past participle '+teh'
+$_ =~ s/\b(\S{2,}?)(C|r|n|A|u|i|m|z)dh\b/$1$2_+dh/g;         # Verbal past participle '+deh'
+$_ =~ s/\b(\S{2,}?)(C|f|s|x)th\b/$1$2_+dh/g;                 # Verbal past participle '+teh'
 
 $_ =~ s/\b(C|z|kr|bu|dA|ur|di|br|\]m|mr|kn|ci)d(h|n)\b/$1_+d_+$2/g;  # Short +dan verbs, eg. 'shodan/zadan' Infinitive or Verbal past participle
 $_ =~ s/\b(rf|gf)t(h|n)\b/$1_+t_+$2/g;  # Short +tan verbs, eg. 'raftan/goftan' Infinitive or Verbal past participle
@@ -326,7 +326,7 @@ if ( $pos ) {
  my $punct = $2;
  $_ =~ m/b\+_/g            and $_ .= "+SBJN-IMP"; # Subjunctive/imperative 'be'
  $_ =~ m/n\+_/g            and $_ .= "+NEG";      # Negative 'na'
- $_ =~ m/mi-?\+_/g         and $_ .= "+DUR";      # Durative 'mi'
+ $_ =~ m/mi-?\+_/g         and $_ .= "+IPFV";     # Imperfective/durative 'mi'
  $_ =~ m/_\+[dt](?!_\+h)/g and $_ .= "+PST";      # Past tense 'd/t'
  $_ =~ m/_\+m/g            and $_ .= "+1.SG";     # 1 person singular 'am'
  $_ =~ m/_\+im/g           and $_ .= "+1.PL";     # 1 person plural 'im'
@@ -388,7 +388,7 @@ unless ( $show_links ) {
 if ($output_type ne "roman") {
  if ($output_type eq "utf8") {
      if ($input_type eq "roman") { # remove the pseudo-quotes around the preserved Latin characters
-	 s/˹(.+?)˺/$1/g;
+         s/˹(.+?)˺/$1/g;
      }
   $_ =~ tr/ABbptVjcHxdLrzJsCSDTZEGfqKglmnuhyaoe\x5d\x7cPkiMXIUN~,;?%*\-/اأبپتثجچحخدذرزژسشصضطظعغفقكگلمنوهيَُِآاةکیءۀئؤًّ،؛؟٪‍‌/;
 #  $_ =~ s/\./‫.‪/g; # Corrects periods to be RTL embedded
@@ -502,34 +502,34 @@ tA	tA	P
 bi	bi	P
 br	br	P
 br	br	P
-rui	ru_+e	P
+rui	ru_+e	P+EZ
 Hti	Hti	P
-sui	su_+e	P
+sui	su_+e	P+EZ
 kh	kh	C
-Ain	Ain	DT
-]n	]n	DT
+Ain	Ain	DT+PROX
+]n	]n	DT+DIST
 ik	ik	DT
 hr	hr	DT
 rA	rA	ACC
-rAi	rA_+e	ACC
-mi	mi	MORPH
-hA	hA	MORPH
+rAi	rA_+e	ACC+EZ
+mi	mi	MORPH.IPFV
+hA	hA	MORPH.PL
 Ai	Ai	MORPH
 hm	hm
-mn	mn	PRON
-tu	tu	PRON
-Au	Au	PRON
-mA	mA	PRON
-CmA	CmA	PRON
-AiCAn	AiCAn	PRON
-]nhA	]nhA	PRON
-]nAn	]nAn	PRON
-iki	iki	PRON
-Agr	Agr
-ps	ps
+mn	mn	PRON+1.SG
+tu	tu	PRON+2.SG
+Au	Au	PRON+3.SG
+mA	mA	PRON+1.PL
+CmA	CmA	PRON+2
+AiCAn	AiCAn	PRON+3.PL
+]nhA	]nhA	PRON+3.PL
+]nAn	]nAn	PRON+3.PL
+iki	iki	PRON+3.SG
+Agr	Agr	PRT+COND
+ps	ps	INTJ
 ch	ch
-hic	hic
-nh	nh
+hic	hic	NEG
+nh	nh	NEG
 bArAn	bArAn	N
 tim	tim	N
 hfth	hfth	N
@@ -543,7 +543,7 @@ pAiAn	pAiAn	N
 miAn	miAn	N
 biCtr	biCtr	A
 digr	digr	A
-]indh	]i_+ndh	A
+]indh	]i_+ndh	A+PRPT
 frhngi	frhngi
 tnhA	tnhA
 AntxAbAt	AntxAbAt	N
@@ -578,49 +578,48 @@ Ardn	Ardn	N
 AnsAni	AnsAn_+i	N
 thrAn	thrAn	N
 pArlmAn	pArlmAn	N
-zbAnhAi	zbAn_+hA_+e	N
-zbAnhA	zbAn_+hA	N
-kCurhAi	kCur_+hA_+e	N
-kCurhA	kCur_+hA	N
+zbAnhAi	zbAn_+hA_+e	N+PL+EZ
+zbAnhA	zbAn_+hA	N+PL
+kCurhAi	kCur_+hA_+e	N+PL+EZ
+kCurhA	kCur_+hA	N+PL
 mrdm	mrd_+m	N
 dftr	dftr	N
 dfAtr	dftr	N
 dktr	dktr	N
-jAi	jA_+e	N
+jAi	jA_+e	N+EZ
 uqt	uqt	N
 mrA	mn rA
 trA	tu rA
 cist	ch Ast
 kjAst	kjA+_Ast
-xuAhd	xuAh_+d	AUX
-Ast	Ast	V
-]mdh	]m_+d_+h	V
-bud	bud	V
-budh	bu_+d_+h	V
-budh	bu_+d_+h	V
-budn	bu_+dn	V
-budnd	bu_+d_+nd	V
-Cdh	C_+d_+h	V
-Cdn	C_+dn	V
-Cud	Cu_+d	V
-dACth	dAC_+t_+h	V
-dAdh	dA_+d_+h	V
-dAdn	dA_+dn	V
-dAdnd	dA_+d_+nd	V
-dArd	dAr_+d	V
-dhd	dh_+d	V
-didn	di_+dn	V
-didh	di_+d_+h	V
-gLACth	gLAC_+t_+h	V
-gLCth	gLC_+t_+h	V
-grfth	grf_+t_+h	V
-knnd	kn_+nd	V
-knd	kn_+d	V
-krdn	kr_+dn	V
-krdh	kr_+d_+h	V
-krdnd	kr_+d_+nd	V	V
-nCdh	n+_C_+d_+h	V
-nist	n+_Ast	V
-sAxth	sAx_+t_+h	V
-zdh	z_+d_+h	V
-zdnd	z_+d_+nd	V
+xuAhd	xuAh_+d	AUX+3.SG
+]mdh	]m_+dh	V+PSPT
+Ast	Ast	V.3.SG.PRS
+bud	bud	V.3.SG.PST
+budh	bu_+dh	V+PSPT
+budn	bu_+dn	V+INF
+budnd	bu_+d_+nd	V+PST+3.PL
+Cdh	C_+dh	V+PSPT
+Cdn	C_+dn	V+INF
+Cud	Cu_+d	V.PRS+3.SG
+dACth	dAC_+dh	V+PSPT
+dAdh	dA_+dh	V+PSPT
+dAdn	dA_+dn	V+INF
+dAdnd	dA_+d_+nd	V+PST+3.PL
+dArd	dAr_+d	V.PRS+3.SG
+dhd	dh_+d	V.PRS+3.SG
+didn	di_+dn	V+INF
+didh	di_+dh	V+PSPT
+gLACth	gLAC_+dh	V+PSPT
+gLCth	gLC_+dh	V+PSPT
+grfth	grf_+dh	V+PSPT
+knnd	kn_+nd	V.PRS+3.PL
+knd	kn_+d	V.PRS+3.SG
+krdn	kr_+dn	V+INF
+krdh	kr_+dh	V+PSPT
+krdnd	kr_+d_+nd	V	V+PST+3.PL
+nCdh	n+_C_+dh	V+NEG+PSPT
+nist	n+_Ast	V+NEG+3.SG.PRS
+sAxth	sAx_+dh	V+PSPT
+zdh	z_+dh	V+PSPT
+zdnd	z_+d_+nd	V+PST+3.PL
