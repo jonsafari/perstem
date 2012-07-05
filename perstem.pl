@@ -10,8 +10,8 @@ use strict;
 #use diagnostics;
 use Getopt::Long;
 
-my $version        = "1.2.2b1";
-my $date           = "2012-07-02";
+my $version        = "1.2.2b2";
+my $date           = "2012-07-05";
 my $copyright      = "(c) 2004-2012  Jon Dehdari - GPL v3";
 my $title          = "Perstem: Persian stemmer $version, $date - $copyright";
 my ( $dont_stem, $flush, $no_roman, $pos, $recall, $show_links, $show_only_stem, $skip_comments, $tokenize, $unvowel, $zwnj )  = undef;
@@ -135,7 +135,7 @@ if ( $tokenize ) {
 if ($input_type ne "roman") {
  ## Preserve Latin characters by temporarily mapping them to their circled unicode counterparts, or other doppelgaenger chars
  ## \x5d == "]"  \x7c == "|"
- tr/a-zA-Z\x5d\x7c~,;?%*\-]+/ⓐ-ⓩⒶ-Ⓩ⁆‖⁓‚;⁇‰⁎‐⌉✢/;
+ tr/a-zA-Z01-9\x5d\x7c~,;?%*\-]+/ⓐ-ⓩⒶ-Ⓩ⓿①-⑨⁆‖⁓‚;⁇‰⁎‐⌉✢/;
 
  if ($no_roman) {
   s/<br>/\n/g;
@@ -426,7 +426,7 @@ if ($output_type ne "roman") {
 
  ## Restore temporary Latin doppelgaenger characters to their normal forms
  ## \x5d == "]"  \x7c == "|"
- tr/ⓐ-ⓩⒶ-Ⓩ⁆‖⁓‚;⁇‰⁎‐⌉✢/a-zA-Z\x5d\x7c~,;?%*\-]+/;
+ tr/ⓐ-ⓩⒶ-Ⓩ⓿①-⑨⁆‖⁓‚;⁇‰⁎‐⌉✢/a-zA-Z01-9\x5d\x7c~,;?%*\-]+/;
 
  if ($output_type eq "utf8" && m/[^ \n]/) { # If utf8 & non-empty
    binmode(STDOUT, ":utf8"); # Uses the :utf8 output layer
