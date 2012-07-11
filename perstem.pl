@@ -10,20 +10,20 @@ use strict;
 #use diagnostics;
 use Getopt::Long;
 
-my $version        = "1.2.2b2";
-my $date           = "2012-07-05";
-my $copyright      = "(c) 2004-2012  Jon Dehdari - GPL v3";
+my $version        = '1.2.2b3';
+my $date           = '2012-07-11';
+my $copyright      = '(c) 2004-2012  Jon Dehdari - GPL v3';
 my $title          = "Perstem: Persian stemmer $version, $date - $copyright";
 my ( $dont_stem, $flush, $no_roman, $pos, $recall, $show_links, $show_only_stem, $skip_comments, $tokenize, $unvowel, $zwnj )  = undef;
 my ( $pos_v, $pos_n, $pos_aj, $pos_other, $before_resolve )  = undef;
-my $ar_chars       = "EqHSTDZLVU";
-#my $longvowel     = "Aui]";
+my $ar_chars       = 'EqHSTDZLVU';
+#my $longvowel     = 'Aui]';
 my %resolve;
 
 ### Defaults
 my $pos_sep = '/';
-my $input_type = "roman";	# default is roman input
-my $output_type = "roman";	# default is roman output
+my $input_type = 'roman';	# default is roman input
+my $output_type = 'roman';	# default is roman output
 
 
 my $usage       = <<"END_OF_USAGE";
@@ -31,8 +31,8 @@ ${title}
 
 Usage:    perl $0 [options] < input > output
 
-Function: Stemmer and morphological analyzer for the Persian language (Farsi).
-          Inflexional morphemes are separated from their roots.
+Function: Persian (Farsi) stemmer, morphological analyzer, transliterator, and partial
+          part-of-speech tagger.  Inflexional morphemes are separated from their roots.
 
 Options:
   -d, --nostem           Don't stem -- mostly for character-set conversion
@@ -41,7 +41,7 @@ Options:
   -i, --input <type>     Input character encoding type {cp1256,isiri3342,utf8,unihtml}
   -l, --links            Show morphological links
   -n, --noroman          Delete all non-Arabic script characters (eg. HTML tags)
-  -o, --output <type>    Output character encoding type {arabtex,cp1256,isiri3342,utf8,unihtml}
+  -o, --output <type>    Output character encoding type {arabtex,cp1256,isiri3342,roman,utf8,unihtml}
   -p, --pos              Tag inflected words for parts of speech
       --pos-sep <char>   Separate words from their parts of speech by <char> (default: "$pos_sep" )
   -r, --recall           Increase recall by parsing ambiguous affixes; may lower precision
@@ -75,8 +75,6 @@ GetOptions(
     'z|zwnj'        => \$zwnj,
 ) or die $usage;
 
-$input_type  or  $input_type = "roman";	# default is roman input
-$output_type or $output_type = "roman";	# default is roman output
 
 $input_type  =~ s/.*1256/cp1256/; # equates win1256 with cp1256
 $output_type =~ s/.*1256/cp1256/; # equates win1256 with cp1256
@@ -96,11 +94,11 @@ while (my $resolve = <DATA>) {
 
 
 ### A hack for what Perl should have already done: support at runtime BOTH utf8 & other input/output types
-if ($input_type eq "utf8") { # UTF-8 input
+if ($input_type eq 'utf8') { # UTF-8 input
  use encoding "utf8";
  open STDIN, "<:encoding(UTF-8)" ;
 }
-elsif ($output_type eq "utf8") { # UTF-8 output
+elsif ($output_type eq 'utf8') { # UTF-8 output
  use encoding "utf8";
  open STDOUT, "<:encoding(UTF-8)" ;
 }
@@ -132,7 +130,12 @@ if ( $tokenize ) {
 
 
 ### Converts from native script to romanized transliteration
-if ($input_type ne "roman") {
+if ($input_type ne 'roman') {
+	if ($output_type eq 'roman') {
+		## Surround contiguous Latin-script blocks with pseudo-quotes
+		s/([a-zA-Z01-9\x5d\x7c~,;?%*\-]+)/˹${1}˺/g;
+	}
+
  ## Preserve Latin characters by temporarily mapping them to their circled unicode counterparts, or other doppelgaenger chars
  ## \x5d == "]"  \x7c == "|"
  tr/a-zA-Z01-9\x5d\x7c~,;?%*\-]+/ⓐ-ⓩⒶ-Ⓩ⓿①-⑨⁆‖⁓‚;⁇‰⁎‐⌉✢/;
@@ -143,11 +146,11 @@ if ($input_type ne "roman") {
   tr/\x01-\x09\x1b-\x1f\x21-\x2d\x2f-\x5a\x5c\x5e-\x9f//d; # Deletes all chars below xa0 except: 0a,20,2e,5b,5d
  }
 
- if ($input_type eq "utf8") {
+ if ($input_type eq 'utf8') {
   tr/اأبپتثجچحخدذرزژسشصضطظعغفقكگلمنوهيَُِآ☿ةکیءىۀئؤًّ،؛؟٪‍‌/ABbptVjcHxdLrzJsCSDTZEGfqkglmnuhiaoe\x5d\x7cPkiMiXIUN~,;?%*\-/;
  }
 
- elsif ($input_type eq "unihtml") {
+ elsif ($input_type eq 'unihtml') {
    my %unihtml2roman = (
 '&#1575;' => 'A', '&#9791;' => 'A', '&#1571;' => 'B', '&#1576;' => 'b', '&#1577;' => 'P', '&#1662;' => 'p', '&#1578;' => 't', '&#1579;' => 'V', '&#1580;' => 'j', '&#1670;' => 'c', '&#1581;' => 'H', '&#1582;' => 'x', '&#1583;' => 'd', '&#1584;' => 'L', '&#1585;' => 'r', '&#1586;' => 'z', '&#1688;' => 'J', '&#1587;' => 's', '&#1588;' => 'C', '&#1589;' => 'S', '&#1590;' => 'D', '&#1591;' => 'T', '&#1592;' => 'Z', '&#1593;' => 'E', '&#1594;' => 'G', '&#1601;' => 'f', '&#1602;' => 'q', '&#1603;' => 'k', '&#1705;' => 'k', '&#1711;' => 'g', '&#1604;' => 'l', '&#1605;' => 'm', '&#1606;' => 'n', '&#1608;' => 'u', '&#1607;' => 'h', '&#1610;' => 'i', '&#1740;' => 'i', '&#1609;' => 'A', '&#1614;' => 'a', '&#1615;' => 'o', '&#1616;' => 'e', '&#1617;' => '~', '&#1570;' => ']', '&#1569;' => 'M', '&#1611;' => 'N', '&#1571;' => 'A', '&#1572;' => 'U', '&#1573;' => 'A', '&#1574;' => 'I', '&#1728;' => 'X', '&#1642;' => '%', '&#1548;' => ',', '&#1563;' => ';', '&#1567;' => '?', '&#8204;' => "-", ' ' => ' ', '.' => '.', ':' => ':', );
   my @charx = split(/(?=\&\#)|(?=\s)|(?=\n)/, $_);
@@ -157,12 +160,12 @@ if ($input_type ne "roman") {
     my $text_from_new = $unihtml2roman{$charx};
     $_ = $_ . $text_from_new;
   } # ends foreach
- }  # ends elsif ($input_type eq "unihtml")
+ }  # ends elsif ($input_type eq 'unihtml')
 
- elsif ($input_type eq "cp1256") {
+ elsif ($input_type eq 'cp1256') {
   tr/\xc7\xc3\xc8\x81\xca\xcb\xcc\x8d\xcd\xce\xcf\xd0\xd1\xd2\x8e\xd3\xd4\xd5\xd6\xd8\xd9\xda\xdb\xdd\xde\xdf\x90\xe1\xe3\xe4\xe6\xe5\xed\xf3\xf5\xf6\xc2\xff\xc9\x98\xc1\xc0\xc6\xc4\xf0\xf8\xa1\xba\xbf\xab\xbb\x9d\xec/ABbptVjcHxdLrzJsCSDTZEGfqkglmnuhiaoe\x5d\x7cPkMXIUN~,;?{}\-i/; }
 
- elsif ($input_type eq "isiri3342") {
+ elsif ($input_type eq 'isiri3342') {
   tr/\xc1\xf8\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc\xcd\xce\xcf\xd0\xd1\xd2\xd3\xd4\xd5\xd6\xd7\xd8\xd9\xda\xdb\xdc\xdd\xde\xdf\xe0\xfe\xf0\xf2\xf1\xc0\xc1\xfc\xda\xe1\xc2\xfb\xfa\xf3\xf6\xac\xbb\xbf\xa5\xe7\xe6\xa1/ABbptVjcHxdLrzJsCSDTZEGfqKglmnuhyaoe\x5d\x7cPkiMIUN~,;?%{}\-/; }
 
  #s/\bA/|/g; # eg. AirAn -> |irAn
@@ -325,21 +328,21 @@ if ( $pos ) {
  if ( $pos_v ) {
  s/^(\P{Po}*)(.*?)$/$1${pos_sep}V/;
  my $punct = $2;
- m/b\+_/g            and $_ .= "+SBJN-IMP"; # Subjunctive/imperative 'be'
- m/n\+_/g            and $_ .= "+NEG";      # Negative 'na'
- m/mi-?\+_/g         and $_ .= "+IPFV";     # Imperfective/durative 'mi'
- m/_\+[dt](?!_\+h)/g and $_ .= "+PST";      # Past tense 'd/t'
- m/_\+m/g            and $_ .= "+1.SG";     # 1 person singular 'am'
- m/_\+im/g           and $_ .= "+1.PL";     # 1 person plural 'im'
- m/_\+id/g           and $_ .= "+2.PL";     # 2 person plural 'id'
- m/_\+nd/g           and $_ .= "+3.PL";     # 3 person plural 'nd'
- m/_\+mAn/g          and $_ .= "+1.PL.ACC"; # 1 person plural accusative 'emAn'
- m/_\+tAn/g          and $_ .= "+2.PL.ACC"; # 2 person plural accusative 'etAn'
- m/_\+CAn/g          and $_ .= "+3.PL.ACC"; # 3 person plural accusative 'eshAn'
+ m/b\+_/g            and $_ .= '+SBJN-IMP'; # Subjunctive/imperative 'be'
+ m/n\+_/g            and $_ .= '+NEG';      # Negative 'na'
+ m/mi-?\+_/g         and $_ .= '+IPFV';     # Imperfective/durative 'mi'
+ m/_\+[dt](?!_\+h)/g and $_ .= '+PST';      # Past tense 'd/t'
+ m/_\+m/g            and $_ .= '+1.SG';     # 1 person singular 'am'
+ m/_\+im/g           and $_ .= '+1.PL';     # 1 person plural 'im'
+ m/_\+id/g           and $_ .= '+2.PL';     # 2 person plural 'id'
+ m/_\+nd/g           and $_ .= '+3.PL';     # 3 person plural 'nd'
+ m/_\+mAn/g          and $_ .= '+1.PL.ACC'; # 1 person plural accusative 'emAn'
+ m/_\+tAn/g          and $_ .= '+2.PL.ACC'; # 2 person plural accusative 'etAn'
+ m/_\+CAn/g          and $_ .= '+3.PL.ACC'; # 3 person plural accusative 'eshAn'
 
- m/_\+[dt]n/g    and $_ .= "+INF";  # Infinitive 'dan/tan'
- m/_\+ndh/g      and $_ .= "+PRPT"; # Present participle 'andeh'
- m/_\+[dt]_\+h/g and $_ .= "+PSPT"; # Past participle 'deh/teh'
+ m/_\+[dt]n/g    and $_ .= '+INF';  # Infinitive 'dan/tan'
+ m/_\+ndh/g      and $_ .= '+PRPT'; # Present participle 'andeh'
+ m/_\+[dt]_\+h/g and $_ .= '+PSPT'; # Past participle 'deh/teh'
  $_ .= "$punct";
  }
 
@@ -347,14 +350,14 @@ if ( $pos ) {
  if ( $pos_n ) {
  s/^(\P{Po}*)(.*?)$/$1${pos_sep}N/;
  my $punct = $2;
- m/_\+-?hA/g and $_ .= "+PL";      # Plural 'hA'
- m/_\+An/g   and $_ .= "+PL.ANIM"; # Plural 'An'
- m/_\+At/g   and $_ .= "+PL";      # Plural 'At'
- m/_\+e/g    and $_ .= "+EZ";      # Ezafe 'e'
- m/_\+C/g    and $_ .= "+3.SG.PC"; # 3 person singular pronominal clitic 'esh'
- m/_\+mAn/g  and $_ .= "+1.PL.PC"; # 1 person plural pronominal clitic 'emAn'
- m/_\+tAn/g  and $_ .= "+2.PL.PC"; # 2 person plural pronominal clitic 'etAn'
- m/_\+CAn/g  and $_ .= "+3.PL.PC"; # 3 person plural pronominal clitic 'eshAn'
+ m/_\+-?hA/g and $_ .= '+PL';      # Plural 'hA'
+ m/_\+An/g   and $_ .= '+PL.ANIM'; # Plural 'An'
+ m/_\+At/g   and $_ .= '+PL';      # Plural 'At'
+ m/_\+e/g    and $_ .= '+EZ';      # Ezafe 'e'
+ m/_\+C/g    and $_ .= '+3.SG.PC'; # 3 person singular pronominal clitic 'esh'
+ m/_\+mAn/g  and $_ .= '+1.PL.PC'; # 1 person plural pronominal clitic 'emAn'
+ m/_\+tAn/g  and $_ .= '+2.PL.PC'; # 2 person plural pronominal clitic 'etAn'
+ m/_\+CAn/g  and $_ .= '+3.PL.PC'; # 3 person plural pronominal clitic 'eshAn'
  $_ .= "$punct";
  }
 
@@ -362,8 +365,8 @@ if ( $pos ) {
  if ( $pos_aj ) {
  s/^(\P{Po}*)(.*?)$/$1${pos_sep}AJ/;
  my $punct = $2;
- m/_\+tr/g   and $_ .= "+CMPR"; # Comparative 'tar'
- m/_\+trin/g and $_ .= "+SUPR"; # Superlative 'tarin'
+ m/_\+tr/g   and $_ .= '+CMPR'; # Comparative 'tar'
+ m/_\+trin/g and $_ .= '+SUPR'; # Superlative 'tarin'
  $_ .= "$punct";
  }
 
@@ -386,16 +389,16 @@ unless ( $show_links ) {
 }
 
 ### Converts from romanized transliteration to native script
-if ($output_type ne "roman") {
- if ($output_type eq "utf8") {
+if ($output_type ne 'roman') {
+ if ($output_type eq 'utf8') {
   tr/ABbptVjcHxdLrzJsCSDTZEGfqKglmnuhyaoe\x5d\x7cPkiMXIUN~,;?%*\-/اأبپتثجچحخدذرزژسشصضطظعغفقكگلمنوهيَُِآاةکیءۀئؤًّ،؛؟٪‍‌/;
  }
 
- elsif ($output_type eq "unihtml") {
+ elsif ($output_type eq 'unihtml') {
    my %roman2unihtml = (
 'A' => '&#1575;', '|' => '&#1575;', 'B' => '&#1571;', 'b' => '&#1576;', 'p' => '&#1662;', 't' => '&#1578;', 'V' => '&#1579;', 'j' => '&#1580;', 'c' => '&#1670;', 'H' => '&#1581;', 'x' => '&#1582;', 'd' => '&#1583;', 'L' => '&#1584;', 'r' => '&#1585;', 'z' => '&#1586;', 'J' => '&#1688;', 's' => '&#1587;', 'C' => '&#1588;', 'S' => '&#1589;', 'D' => '&#1590;', 'T' => '&#1591;', 'Z' => '&#1592;', 'E' => '&#1593;', 'G' => '&#1594;', 'f' => '&#1601;', 'q' => '&#1602;', 'k' => '&#1705;', 'K' => '&#1603;', 'g' => '&#1711;', 'l' => '&#1604;', 'm' => '&#1605;', 'n' => '&#1606;', 'u' => '&#1608;', 'v' => '&#1608;', 'w' => '&#1608;', 'h' => '&#1607;', 'X' => '&#1728;', 'i' => '&#1740;', 'I' => '&#1574;', 'a' => '&#1614;', 'o' => '&#1615;', 'e' => '&#1616;', '~' => '&#1617;', ',' => '&#1548;', ';' => '&#1563;', '?' => '&#1567;', ']' => '&#1570;', 'M' => '&#1569;', 'N' => '&#1611;', 'U' => '&#1572;', '-' => '&#8204;', ' ' => ' ', '_' => '_', '+' => '+', "\n" => '<br/>', '.' => '&#8235.&#8234;', );
   my @charx = split(//, $_);
-  $_ = "";
+  $_ = '';
   foreach my $charx (@charx)
   {
     my $newchar = $roman2unihtml{$charx};
@@ -403,19 +406,19 @@ if ($output_type ne "roman") {
   } # ends foreach
  }  # ends elsif (unihtml)
 
- elsif ($output_type eq "cp1256") {
+ elsif ($output_type eq 'cp1256') {
   tr/ABbptVjcHxdLrzJsCSDTZEGfqKglmnuhyaoe\x5d\x7cPkMXIUN~,;?{}\-i/\xc7\xc3\xc8\x81\xca\xcb\xcc\x8d\xcd\xce\xcf\xd0\xd1\xd2\x8e\xd3\xd4\xd5\xd6\xd8\xd9\xda\xdb\xdd\xde\xdf\x90\xe1\xe3\xe4\xe6\xe5\xed\xf3\xf5\xf6\xc2\xff\xc9\x98\xc1\xc0\xc6\xc4\xf0\xf8\xa1\xba\xbf\xab\xbb\x9d\xec/;
 #  s/\x2e/\xfe\x2e\xfd/g; # Corrects periods to be RTL embedded; broken
  }
 
- elsif ($output_type eq "isiri3342") {
+ elsif ($output_type eq 'isiri3342') {
   tr/ABbptVjcHxdLrzJsCSDTZEGfqKglmnuhyaoe\x5d\x7cPkiMIUN~,;?%{}\-/\xc1\xf8\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc\xcd\xce\xcf\xd0\xd1\xd2\xd3\xd4\xd5\xd6\xd7\xd8\xd9\xda\xdb\xdc\xdd\xde\xdf\xe0\xfe\xf0\xf2\xf1\xc0\xc1\xfc\xda\xe1\xc2\xfb\xfa\xf3\xf6\xac\xbb\xbf\xa5\xe7\xe6\xa1/; }
 
- elsif ($output_type eq "arabtex") {
+ elsif ($output_type eq 'arabtex') {
    my %roman2arabtex = (
      'A' => 'A', '|' => 'a', 'b' => 'b', 'p' => 'p', 't' => 't', 'V' => '_t', 'j' => 'j', 'c' => '^c', 'H' => '.h', 'x' => 'x', 'd' => 'd', 'L' => '_d', 'r' => 'r', 'z' => 'z', 'J' => '^z', 's' => 's', 'C' => '^s', 'S' => '.s', 'D' => '.d', 'T' => '.t', 'Z' => '.z', 'E' => '`', 'G' => '.g', 'f' => 'f', 'q' => 'q', 'K' => 'k', 'k' => 'k', 'g' => 'g', 'l' => 'l', 'm' => 'm', 'n' => 'n', 'u' => 'U', 'v' => 'w', 'w' => 'w', 'h' => 'h', 'X' => 'H-i', 'i' => 'I', 'I' => '\'y', 'a' => 'a', 'o' => 'o', 'e' => 'e', 'P' => 'T', '~' => '', ',' => ',', ';' => ';', '?' => '?', ']' => '^A', 'M' => '\'', 'N' => 'aN', 'U' => 'U\'', '{' => '\lq ', '}' => '\rq ', '-' => '\hspace{0ex}', '.' => '.', ' ' => ' ', '_' => '_', '+' => '+', );
   my @charx = split(//, $_);
-  $_ = "";
+  $_ = '';
   foreach my $charx (@charx)
   {
     my $newchar = $roman2arabtex{$charx};
@@ -428,7 +431,8 @@ if ($output_type ne "roman") {
  ## \x5d == "]"  \x7c == "|"
  tr/ⓐ-ⓩⒶ-Ⓩ⓿①-⑨⁆‖⁓‚;⁇‰⁎‐⌉✢/a-zA-Z01-9\x5d\x7c~,;?%*\-]+/;
 
- if ($output_type eq "utf8" && m/[^ \n]/) { # If utf8 & non-empty
+
+ if ($output_type eq 'utf8' && m/[^ \n]/) { # If utf8 & non-empty
    binmode(STDOUT, ":utf8"); # Uses the :utf8 output layer
    $full_line .= "$_ ";
  }
@@ -436,9 +440,13 @@ if ($output_type ne "roman") {
    $full_line .= "$_ ";
  }
 
-} # ends if ($output_type ne "roman") -- for non-roman input
+} # ends if ($output_type ne 'roman') -- for non-roman input
 elsif ( /[^ \n]/ ) { # if latin-script line is non-empty
-    $full_line .= "$_ ";
+  if ($input_type ne 'roman') {
+	  ## Deal with latin-script strings from arabic-script input
+      tr/ⓐ-ⓩⒶ-Ⓩ⓿①-⑨⁆‖⁓‚;⁇‰⁎‐⌉✢/a-zA-Z01-9\x5d\x7c~,;?%*\-]+/;
+  }
+  $full_line .= "$_ ";
 }
 
 
