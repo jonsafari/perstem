@@ -10,8 +10,8 @@ use strict;
 #use diagnostics;
 use Getopt::Long;
 
-my $version        = '1.3b2';
-my $date           = '2012-07-11';
+my $version        = '1.3b3';
+my $date           = '2012-07-12';
 my $copyright      = '(c) 2004-2012  Jon Dehdari - GPL v3';
 my $title          = "Perstem: Persian stemmer $version, $date - $copyright";
 my ( $dont_stem, $flush, $no_roman, $pos, $recall, $show_links, $show_only_stem, $skip_comments, $tokenize, $unvowel, $zwnj )  = undef;
@@ -271,8 +271,8 @@ while (<>) {
 ##### Adjective Section #####
 
         unless ( $pos_v || $pos_n ) {
-          s/\b([^+ ]+?)trin\b/$1_+trin/g;   # Adjectival superlative suffix
-          s/\b([^+ ]+?)tr\b/$1_+tr/g;       # Adjectival comparative suffix
+          s/\b([^+ ]+?)-?trin\b/$1_+trin/g; # Adjectival superlative suffix, optional ZWNJ
+          s/\b([^+ ]+?)-?tr\b/$1_+tr/g;     # Adjectival comparative suffix, optional ZWNJ
           s/\b([^+ ]+?)(?<!A)gi\b/$1h_+i/g; # Adjectival suffix from stem ending in 'eh'
           s/\b([^+ ]+?)(i|I)i\b/$1_+i/g;    # '+i' suffix preceded by 'i' (various meanings)
           s/([^+ ]+?)e\b/$1_+e/g;           # An ezafe
@@ -291,7 +291,7 @@ while (<>) {
 
           # s/\b(n?)([^+ ]{2,}?)((?<=r|u|i|A|n|m|z)d|(?<=f|C|x|s)t)(?!\s)\b/$1+_$2_+$3/g; # 3rd person singular past verb & neg.
           s/(\S{2,}?(?:[^+ ]{2}d|[^+ ]{2}(?:s|f|C|x)t|\bn\+_\S{2,}?|mi\+_\S{2,}?|b\+_\S{2,}?)(?:im|id|nd|m|(?<!A|u)i|d))mAn\b/$1_+mAn/g;   # Verbal Object verb enclitic +mAn
-          s/\b([^+ ]{3,}?)([uAi])st\b/$1$2 Ast/g; # Less restrictive version of above, eg. mAst -> mA Ast, but sentence-final puncutation not necessary
+          s/\b([^+ ]{3,}?)([uAi])st\b/$1$2 Ast/g; # Less restrictive version of above, eg. mAst -> mA Ast, but sentence-final punctuation not necessary
 
 ### Non-verbal ###
           s/\b([^+ ]{3,}?)(?<![Au])i\b/$1_+i/g;        # Indef. '+i' suffix.  This is a very common, but very error-prone suffix.
@@ -535,6 +535,11 @@ nZAm	nZAm	N
 jhAn	jhAn	N
 pAiAn	pAiAn	N
 miAn	miAn	N
+frmAndh	frmAndh	N
+nmAindh	nmAindh N
+prundh	prundh	N
+xndh	xndh	N
+frxndh	frxndh	A
 biCtr	biCtr	A
 digr	digr	A
 ]indh	]i_+ndh	A+PRPT
@@ -549,9 +554,7 @@ sizdh	sizdh	NUM
 CAnzdh	CAnzdh	NUM
 nuzdh	nuzdh	NUM
 miliArd	miliArd	NUM
-frxndh	frxndh
 rIis	rIis	N
-xndh	xndh
 lndn	lndn	N
 mEdn	mEdn	N
 tmdn	tmdn
@@ -596,18 +599,22 @@ budnd	bu_+d_+nd	V+PST+3.PL
 Cdh	C_+dh	V+PSPT
 Cdn	C_+dn	V+INF
 Cud	Cu_+d	V.PRS+3.SG
+Cundh	Cu_+ndh	V.PRS+PRPT
 dACth	dAC_+dh	V+PSPT
 dAdh	dA_+dh	V+PSPT
 dAdn	dA_+dn	V+INF
 dAdnd	dA_+d_+nd	V+PST+3.PL
 dArd	dAr_+d	V.PRS+3.SG
 dhd	dh_+d	V.PRS+3.SG
+dhndh	dh_+ndh	V.PRS+PRPT
 didn	di_+dn	V+INF
 didh	di_+dh	V+PSPT
+binndh	bin_+ndh	V.PRS+PRPT
 gLACth	gLAC_+dh	V+PSPT
 gLCth	gLC_+dh	V+PSPT
 grfth	grf_+dh	V+PSPT
 knnd	kn_+nd	V.PRS+3.PL
+knndh	kn_+ndh	V.PRS+PRPT
 knd	kn_+d	V.PRS+3.SG
 krdn	kr_+dn	V+INF
 krdh	kr_+dh	V+PSPT
@@ -617,3 +624,4 @@ nist	n+_Ast	V+NEG+3.SG.PRS
 sAxth	sAx_+dh	V+PSPT
 zdh	z_+dh	V+PSPT
 zdnd	z_+d_+nd	V+PST+3.PL
+znndh	zn_+ndh	V.PRS+PRPT
