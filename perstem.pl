@@ -230,12 +230,13 @@ while (<>) {
         s/(\S{2,}?)(?<!A)d_\+(nd|id|im|d|m)(_\+\S*?)?\b/$1_+d_+$2$3/g;    # Verbal tense suffix 'd' (sans ..._+d_+i  -- see recall section)
         s/(\S+?)(s|f|C|x)t_\+(nd|id|im|d|i|m)(_\+\S*?)?\b/$1$2_+t_+$3$4/g;  # Verbal tense suffix 't'
 
-        s/\b(\S+?)(f|C|x|s)tn(C|CAn|tAn|mAn)\b/$1$2_+dn_+$3/g;    # Gerund (infinitive) '+tan' + pronominal enclitic
-        s/\b(\S{2,}?)(r|u|i|A|n|m)dn\b/$1$2_+dn/g;                # Gerund (infinitive) '+dan'
-        s/\b(\S{2,}?)(f|C|x|s)tn\b/$1$2_+dn/g;                    # Gerund (infinitive) '+tan'
-        s/\b(\S{2,}?)(i|n|A|u|z|r|b|h|s|k|C|f)ndh\b/$1$2_+ndh/g;  # Present participle '+andeh'
-        s/\b(\S{2,}?)(C|r|n|A|u|i|m|z)dh\b/$1$2_+dh/g;            # Past participle '+deh'
-        s/\b(\S{2,}?)(C|f|s|x)th\b/$1$2_+dh/g;                    # Past participle '+teh'
+        s/\b(\S+?)([fCxs])tn(C|CAn|tAn|mAn)\b/$1$2_+dn_+$3/g;    # Gerund (infinitive) '+tan' + pronominal enclitic
+        s/\b(\S+?)([ruiAnm])dn(C|CAn|tAn|mAn)\b/$1$2_+dn_+$3/g;  # Gerund (infinitive) '+dan' + proniminal enclitic
+        s/\b(\S{2,}?)([ruiAnm])dn\b/$1$2_+dn/g;                  # Gerund (infinitive) '+dan'
+        s/\b(\S{2,}?)([fCxs])tn\b/$1$2_+dn/g;                    # Gerund (infinitive) '+tan'
+        s/\b(\S{2,}?)([inAuzrbhskCf])ndh\b/$1$2_+ndh/g;          # Present participle '+andeh'
+        s/\b(\S{2,}?)([CrnAuimz])dh\b/$1$2_+dh/g;                # Past participle '+deh'
+        s/\b(\S{2,}?)([Cfsx])th\b/$1$2_+dh/g;                    # Past participle '+teh'
 
         s/\b(C|z|kr|bu|dA|ur|di|br|\]m|mr|kn|ci)d(h|n)\b/$1_+d$2/g;  # Short +dan verbs, eg. 'shodan/zadan' gerund or past participle
         s/\b(rf|gf)t(h|n)\b/$1_+d$2/g;  # Short +tan verbs, eg. 'raftan/goftan' gerund or past participle
@@ -328,10 +329,10 @@ while (<>) {
         m/_\+im/g           and $_ .= '+1.PL';     # 1 person plural 'im'
         m/_\+id/g           and $_ .= '+2.PL';     # 2 person plural 'id'
         m/_\+nd/g           and $_ .= '+3.PL';     # 3 person plural 'nd'
+        m/_\+C(?!An)/g      and $_ .= '+3.SG.ACC'; # 3 person singular accusative 'esh'
         m/_\+mAn/g          and $_ .= '+1.PL.ACC'; # 1 person plural accusative 'emAn'
         m/_\+tAn/g          and $_ .= '+2.PL.ACC'; # 2 person plural accusative 'etAn'
         m/_\+CAn/g          and $_ .= '+3.PL.ACC'; # 3 person plural accusative 'eshAn'
-        m/_\+C(?!An)/g      and $_ .= '+3.SG.ACC'; # 3 person singular accusative 'esh'
 
         m/_\+ndh/g      and $_ .= '+PRPT'; # Present participle 'andeh'
         m/_\+[dt]h/g    and $_ .= '+PSPT'; # Past participle 'deh/teh'
@@ -342,14 +343,14 @@ while (<>) {
       if ( $pos_n ) {
         s/^(\P{Po}*)(.*?)$/$1${pos_sep}N/;
         my $punct = $2;
-        m/_\+-?hA/g and $_ .= '+PL';      # Plural 'hA'
-        m/_\+An/g   and $_ .= '+PL.ANIM'; # Plural 'An'
-        m/_\+At/g   and $_ .= '+PL';      # Plural 'At'
-        m/_\+e/g    and $_ .= '+EZ';      # Ezafe 'e'
-        m/_\+C/g    and $_ .= '+3.SG.PC'; # 3 person singular pronominal clitic 'esh'
-        m/_\+mAn/g  and $_ .= '+1.PL.PC'; # 1 person plural pronominal clitic 'emAn'
-        m/_\+tAn/g  and $_ .= '+2.PL.PC'; # 2 person plural pronominal clitic 'etAn'
-        m/_\+CAn/g  and $_ .= '+3.PL.PC'; # 3 person plural pronominal clitic 'eshAn'
+        m/_\+-?hA/g     and $_ .= '+PL';      # Plural 'hA'
+        m/_\+An/g       and $_ .= '+PL.ANIM'; # Plural 'An'
+        m/_\+At/g       and $_ .= '+PL';      # Plural 'At'
+        m/_\+e/g        and $_ .= '+EZ';      # Ezafe 'e'
+        m/_\+C(?!An)/g  and $_ .= '+3.SG.PC'; # 3 person singular pronominal clitic 'esh'
+        m/_\+mAn/g      and $_ .= '+1.PL.PC'; # 1 person plural pronominal clitic 'emAn'
+        m/_\+tAn/g      and $_ .= '+2.PL.PC'; # 2 person plural pronominal clitic 'etAn'
+        m/_\+CAn/g      and $_ .= '+3.PL.PC'; # 3 person plural pronominal clitic 'eshAn'
         $_ .= "$punct";
       }
 
