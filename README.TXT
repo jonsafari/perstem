@@ -2,23 +2,24 @@ Perstem:  Persian stemmer (c) 2004-2012  Jon Dehdari - GPL v.3
 
 Usage:    perl perstem.pl [options] < input > output
 
-Function: Stemmer and morphological analyzer for the Persian language (Farsi).
-          Inflexional morphemes are separated from their roots.  Input may be
-          encoded as Perso-Arabic script UTF-8, ISIRI 3342, Windows-1256,
-          or romanized text.  Use the -i flag to specify input encoding.  Output
-          is handled similarly.
+Function:  Persian (Farsi) stemmer, morphological analyzer, transliterator,
+           and partial part-of-speech tagger.  Input may be encoded
+           as Perso-Arabic script UTF-8, ISIRI 3342, Windows-1256, or
+           romanized text.  Use the -i flag to specify input encoding.
+           Output is handled similarly.
 
 Options:
   -d, --nostem           Don't stem -- mostly for character-set conversion
       --flush            Autoflush buffer output after every line
   -h, --help             Print usage
-  -i, --input <type>     Input character encoding type {cp1256,isiri3342,utf8,unihtml}
+  -i, --input <type>     Input character encoding type {cp1256,isiri3342,roman,utf8,unihtml}
   -l, --links            Show morphological links.  For example 'mi-xurnd' would appear
                          as 'mi-+_xur_+nd' instead of the default 'mi- xur nd'.
   -n, --noroman          Delete all non-Arabic script characters (eg. HTML tags)
-  -o, --output <type>    Output character encoding type {arabtex,cp1256,isiri3342,utf8,unihtml}
+  -o, --output <type>    Output character encoding type {arabtex,cp1256,isiri3342,roman,utf8,unihtml}
   -p, --pos              Tag inflected words for parts of speech
-  -r, --recall           Increase recall by analyzing ambiguous affixes; may hurt precision!
+      --pos-sep <char>   Separate words from their parts of speech by <char> (default: "/" )
+  -r, --recall           Increase recall by analyzing ambiguous affixes; may lower precision!
       --skip-comments    Skip commented-out lines, without printing them
   -s, --stem             Return only word stems.  For example 'mi-xurnd' would appear as 'xur'.
   -t, --tokenize         Tokenize punctuation.  Thus most non-alphabetic characters such as
@@ -36,11 +37,10 @@ Acknowledgement: Thanks to Jace Livingston, David Zajic, and Corey Miller for th
 
 
 
-Romanized input table:
+Romanized transliteration input table:
 
 Roman	Unicode-Name
 ______________________________________________________
--	ZERO WIDTH NON-JOINER
 A	ARABIC LETTER ALEF
 b	ARABIC LETTER BEH
 p	ARABIC LETTER PEH 
@@ -91,4 +91,4 @@ N	ARABIC FATHATAN (Tanvin)
 ;	ARABIC SEMICOLON
 ?	ARABIC QUESTION MARK
 .	FULL STOP (Period)
-
+-	ZERO WIDTH NON-JOINER
