@@ -10,7 +10,7 @@ use strict;
 #use diagnostics;
 use Getopt::Long;
 
-my $version        = '1.3b4';
+my $version        = '1.3b5';
 my $date           = '2012-07-13';
 my $copyright      = '(c) 2004-2012  Jon Dehdari - GPL v3';
 my $title          = "Perstem: Persian stemmer $version, $date - $copyright";
@@ -452,41 +452,6 @@ while (<>) {
 ## 3. Don't stem (false positive):	'bArAn	bArAn'
 ## 4. Stop word (delete):		'u	'
 __DATA__
-#u	
-#dr	
-#bh	
-#Az	
-#kh	
-#Ain	
-#mi	
-#rA	
-#bA	
-#hA	
-#]n	
-#ik	
-#hm	
-#mn	
-#tu	
-#Au	
-#mA	
-#CmA	
-#tA	
-#digr	
-#iA	
-#AmA	
-#Agr	
-#hr	
-#ps	
-#ch	
-#iki	
-#hic	
-#uli	
-#nh	
-#Ast	
-#hA	
-#bi	
-#Ai	
-#br	
 u	u	CONJ
 iA	iA	CONJ
 AmA	AmA	CONJ
@@ -587,7 +552,27 @@ dftr	dftr	N
 dfAtr	dftr	N
 dktr	dktr	N
 jAi	jA_+e	N+EZ
-uqt	uqt	N
+ksAni	ks	N+PL+INDEF
+]VAr	AVr	N+PL.BROKEN
+Amur	Amr	N+PL.BROKEN
+AfrAd	frd	N+PL.BROKEN
+muAd	mAdh	N+PL.BROKEN
+ruAbT	rAbTh	N+PL.BROKEN
+CrAiT	CrT	N+PL.BROKEN
+mnATq	mnTqh	N+PL.BROKEN
+mnAbE	mnbE	N+PL.BROKEN
+msAIl	msIlh	N+PL.BROKEN
+SnAiE	SniEh	N+PL.BROKEN
+ntAij	ntijh	N+PL.BROKEN
+mll	mlt	N+PL.BROKEN
+Hdud	Hd	N+PL.BROKEN
+Hquq	Hq	N+PL.BROKEN
+mrAsm	rsm	N+PL.BROKEN
+AnuAE	nuE	N+PL.BROKEN
+muArd	murd	N+PL.BROKEN
+EuAml	EAml	N+PL.BROKEN
+mrAkz	mrkz	N+PL.BROKEN
+AEDAi	EDu	N+PL.BROKEN+EZ
 mrA	mn rA
 trA	tu rA
 cist	ch Ast
