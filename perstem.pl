@@ -10,15 +10,15 @@ use strict;
 #use diagnostics;
 use Getopt::Long;
 
-my $version        = '1.3b3';
-my $date           = '2012-07-12';
+my $version        = '1.3b4';
+my $date           = '2012-07-13';
 my $copyright      = '(c) 2004-2012  Jon Dehdari - GPL v3';
 my $title          = "Perstem: Persian stemmer $version, $date - $copyright";
 my ( $dont_stem, $flush, $no_roman, $pos, $recall, $show_links, $show_only_stem, $skip_comments, $tokenize, $unvowel, $zwnj )  = undef;
 my ( $pos_v, $pos_n, $pos_aj, $pos_other, $before_resolve )  = undef;
+my %resolve;
 my $ar_chars       = 'EqHSTDZLVU';
 #my $longvowel     = 'Aui]';
-my %resolve;
 
 ### Defaults
 my $pos_sep = '/';
@@ -37,7 +37,7 @@ Options:
   -d, --nostem           Don't stem -- mostly for character-set conversion
       --flush            Autoflush buffer output after every line
   -h, --help             Print usage
-  -i, --input <type>     Input character encoding type {cp1256,isiri3342,utf8,unihtml}
+  -i, --input <type>     Input character encoding type {cp1256,isiri3342,roman,utf8,unihtml}
   -l, --links            Show morphological links
   -n, --noroman          Delete all non-Arabic script characters (eg. HTML tags)
   -o, --output <type>    Output character encoding type {arabtex,cp1256,isiri3342,roman,utf8,unihtml}
@@ -62,9 +62,9 @@ GetOptions(
   'l|links'       => \$show_links,
   'n|noroman'     => \$no_roman,
   'o|output:s'    => \$output_type,
-  'p|pos'	    => \$pos,
+  'p|pos'         => \$pos,
   'pos-sep:s'     => \$pos_sep,
-  'r|recall'	    => \$recall,
+  'r|recall'      => \$recall,
   'skip-comments' => \$skip_comments,
 #  's|stoplist:s'  => \$resolve_file,
   's|stem'        => \$show_only_stem,
@@ -185,10 +185,10 @@ while (<>) {
 
     #Inserts ZWNJ's where they should have been originally, but weren't
     if ( $zwnj ) {
-      s/(?<![a-zA-Z])mi /mi-/g;			# 'mi-'
+      s/(?<![a-zA-Z])mi /mi-/g;				# 'mi-'
       s/(?<![a-zA-Z])nmi /nmi-/g;			# 'nmi-'
       s/(?<![a-zA-Z])nmi(\S{6,})/nmi-$1/g;	# 'nmi-'
-      s/ hA(?![a-zA-Z])/-hA/g;			# '-hA'
+      s/ hA(?![a-zA-Z])/-hA/g;				# '-hA'
       s/ hAi(?![a-zA-Z])/-hAi/g;			# '-hAi'
       s/(\S{6,})hAi(?![a-zA-Z])/$1-hAi/g;	# '-hAi'
       s/h Ai(?![a-zA-Z])/h-Ai/g;			# '+h-Ai'
@@ -204,7 +204,7 @@ while (<>) {
         elsif ($resolve{$_}[1] eq 'A') { $pos_aj = 1; }
         elsif ($resolve{$_}[1] ) { $pos_other = 1; }
 
-        $before_resolve = $_;	# we'll need the original string for POS assignment later
+        $before_resolve = $_;  # we'll need the original string for POS assignment later
         $_ = $resolve{$_}[0];
       }
       else {
@@ -230,14 +230,15 @@ while (<>) {
         s/(\S{2,}?)(?<!A)d_\+(nd|id|im|d|m)(_\+\S*?)?\b/$1_+d_+$2$3/g;    # Verbal tense suffix 'd' (sans ..._+d_+i  -- see recall section)
         s/(\S+?)(s|f|C|x)t_\+(nd|id|im|d|i|m)(_\+\S*?)?\b/$1$2_+t_+$3$4/g;  # Verbal tense suffix 't'
 
-        s/\b(\S{2,}?)(r|u|i|A|n|m)dn\b/$1$2_+dn/g;               # Verbal Infinitive '+dan'
-        s/\b(\S{2,}?)(f|C|x|s)tn\b/$1$2_+dn/g;                   # Verbal Infinitive '+tan'
-        s/\b(\S{2,}?)(i|n|A|u|z|r|b|h|s|k|C|f)ndh\b/$1$2_+ndh/g; # Verbal present participle '+andeh'
-        s/\b(\S{2,}?)(C|r|n|A|u|i|m|z)dh\b/$1$2_+dh/g;         # Verbal past participle '+deh'
-        s/\b(\S{2,}?)(C|f|s|x)th\b/$1$2_+dh/g;                 # Verbal past participle '+teh'
+        s/\b(\S+?)(f|C|x|s)tn(C|CAn|tAn|mAn)\b/$1$2_+dn_+$3/g;    # Gerund (infinitive) '+tan' + pronominal enclitic
+        s/\b(\S{2,}?)(r|u|i|A|n|m)dn\b/$1$2_+dn/g;                # Gerund (infinitive) '+dan'
+        s/\b(\S{2,}?)(f|C|x|s)tn\b/$1$2_+dn/g;                    # Gerund (infinitive) '+tan'
+        s/\b(\S{2,}?)(i|n|A|u|z|r|b|h|s|k|C|f)ndh\b/$1$2_+ndh/g;  # Present participle '+andeh'
+        s/\b(\S{2,}?)(C|r|n|A|u|i|m|z)dh\b/$1$2_+dh/g;            # Past participle '+deh'
+        s/\b(\S{2,}?)(C|f|s|x)th\b/$1$2_+dh/g;                    # Past participle '+teh'
 
-        s/\b(C|z|kr|bu|dA|ur|di|br|\]m|mr|kn|ci)d(h|n)\b/$1_+d_+$2/g;  # Short +dan verbs, eg. 'shodan/zadan' Infinitive or Verbal past participle
-        s/\b(rf|gf)t(h|n)\b/$1_+t_+$2/g;  # Short +tan verbs, eg. 'raftan/goftan' Infinitive or Verbal past participle
+        s/\b(C|z|kr|bu|dA|ur|di|br|\]m|mr|kn|ci)d(h|n)\b/$1_+d$2/g;  # Short +dan verbs, eg. 'shodan/zadan' gerund or past participle
+        s/\b(rf|gf)t(h|n)\b/$1_+d$2/g;  # Short +tan verbs, eg. 'raftan/goftan' gerund or past participle
         s/\b(C|z|kr|bu|dA|ur|di|br|\]m|mr|kn|rsi|ci)d(nd|i|id|m|im)?\b/$1_+d_+$2/g;  # 'shodan/zadan...' simple past - temp. until resolve file works
         s/\b(rf|gf)t(nd|i|id|m|im)?\b/$1_+t_+$2/g;  # 'raftan/goftan' simple past - temp. until resolve file works
         s/\b(xuAh|dAr|kn|Cu|bAC)(d|nd|id|i|im|m)\b/$1_+$2/g;  # future/have - temp. until resolve file works
@@ -321,7 +322,8 @@ while (<>) {
         m/b\+_/g            and $_ .= '+SBJN-IMP'; # Subjunctive/imperative 'be'
         m/n\+_/g            and $_ .= '+NEG';      # Negative 'na'
         m/mi-?\+_/g         and $_ .= '+IPFV';     # Imperfective/durative 'mi'
-        m/_\+[dt](?!_\+h)/g and $_ .= '+PST';      # Past tense 'd/t'
+        m/_\+[dt](?![hn])/g and $_ .= '+PST';      # Past tense 'd/t'
+        m/_\+[dt]n/g        and $_ .= '+GER';      # Gerund 'dan/tan'
         m/_\+m/g            and $_ .= '+1.SG';     # 1 person singular 'am'
         m/_\+im/g           and $_ .= '+1.PL';     # 1 person plural 'im'
         m/_\+id/g           and $_ .= '+2.PL';     # 2 person plural 'id'
@@ -329,10 +331,10 @@ while (<>) {
         m/_\+mAn/g          and $_ .= '+1.PL.ACC'; # 1 person plural accusative 'emAn'
         m/_\+tAn/g          and $_ .= '+2.PL.ACC'; # 2 person plural accusative 'etAn'
         m/_\+CAn/g          and $_ .= '+3.PL.ACC'; # 3 person plural accusative 'eshAn'
+        m/_\+C(?!An)/g      and $_ .= '+3.SG.ACC'; # 3 person singular accusative 'esh'
 
-        m/_\+[dt]n/g    and $_ .= '+INF';  # Infinitive 'dan/tan'
         m/_\+ndh/g      and $_ .= '+PRPT'; # Present participle 'andeh'
-        m/_\+[dt]_\+h/g and $_ .= '+PSPT'; # Past participle 'deh/teh'
+        m/_\+[dt]h/g    and $_ .= '+PSPT'; # Past participle 'deh/teh'
         $_ .= "$punct";
       }
 
@@ -594,20 +596,20 @@ xuAhd	xuAh_+d	AUX+3.SG
 Ast	Ast	V.3.SG.PRS
 bud	bud	V.3.SG.PST
 budh	bu_+dh	V+PSPT
-budn	bu_+dn	V+INF
+budn	bu_+dn	V+GER
 budnd	bu_+d_+nd	V+PST+3.PL
 Cdh	C_+dh	V+PSPT
-Cdn	C_+dn	V+INF
+Cdn	C_+dn	V+GER
 Cud	Cu_+d	V.PRS+3.SG
 Cundh	Cu_+ndh	V.PRS+PRPT
 dACth	dAC_+dh	V+PSPT
 dAdh	dA_+dh	V+PSPT
-dAdn	dA_+dn	V+INF
+dAdn	dA_+dn	V+GER
 dAdnd	dA_+d_+nd	V+PST+3.PL
 dArd	dAr_+d	V.PRS+3.SG
 dhd	dh_+d	V.PRS+3.SG
 dhndh	dh_+ndh	V.PRS+PRPT
-didn	di_+dn	V+INF
+didn	di_+dn	V+GER
 didh	di_+dh	V+PSPT
 binndh	bin_+ndh	V.PRS+PRPT
 gLACth	gLAC_+dh	V+PSPT
@@ -616,7 +618,7 @@ grfth	grf_+dh	V+PSPT
 knnd	kn_+nd	V.PRS+3.PL
 knndh	kn_+ndh	V.PRS+PRPT
 knd	kn_+d	V.PRS+3.SG
-krdn	kr_+dn	V+INF
+krdn	kr_+dn	V+GER
 krdh	kr_+dh	V+PSPT
 krdnd	kr_+d_+nd	V	V+PST+3.PL
 nCdh	n+_C_+dh	V+NEG+PSPT
