@@ -10,8 +10,8 @@ use strict;
 #use diagnostics;
 use Getopt::Long;
 
-my $version        = '1.3';
-my $date           = '2012-07-13';
+my $version        = '1.3.1b1';
+my $date           = '2012-07-16';
 my $copyright      = '(c) 2004-2012  Jon Dehdari - GPL v3';
 my $title          = "Perstem: Persian stemmer $version, $date - $copyright";
 my ( $dont_stem, $flush, $no_roman, $pos, $recall, $show_links, $show_only_stem, $skip_comments, $tokenize, $unvowel, $zwnj )  = undef;
@@ -162,8 +162,6 @@ while (<>) {
     elsif ($input_type eq 'isiri3342') {
       tr/\xc1\xf8\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc\xcd\xce\xcf\xd0\xd1\xd2\xd3\xd4\xd5\xd6\xd7\xd8\xd9\xda\xdb\xdc\xdd\xde\xdf\xe0\xfe\xf0\xf2\xf1\xc0\xc1\xfc\xda\xe1\xc2\xfb\xfa\xf3\xf6\xac\xbb\xbf\xa5\xe7\xe6\xa1/ABbptVjcHxdLrzJsCSDTZEGfqKglmnuhyaoe\x5d\x7cPkiMIUN~,;?%{}\-/; }
 
-    #s/\bA/|/g; # eg. AirAn -> |irAn
-    #s/˹\|/˹A/g;
   } # if ($input_type)
 
   @_ = split(/(?<!mi)\s+(?!hA)/); # Tokenize
@@ -196,88 +194,90 @@ while (<>) {
 
     unless ($dont_stem){ # Do stemming regexes unless $dont_stem is true
 
-      ( $pos_v, $pos_n, $pos_aj, $pos_other)  = undef;
+      ( $pos_v, $pos_n, $pos_aj, $pos_other) = undef;
 
       if ( $resolve{$_} ) { # word is found in Resolve section
-        if    ($resolve{$_}[1] eq 'V') { $pos_v  = 1; }
-        elsif ($resolve{$_}[1] eq 'N') { $pos_n  = 1; }
-        elsif ($resolve{$_}[1] eq 'A') { $pos_aj = 1; }
-        elsif ($resolve{$_}[1] ) { $pos_other = 1; }
+        if ($pos) {
+          my $cached_pos_full  = $resolve{$_}[1];
+          if ($cached_pos_full) { # Some entries don't have a part-of-speech
+            my $cached_pos_basic = substr($cached_pos_full, 0, 1);
+
+            if    ($cached_pos_basic eq 'N') { $pos_n  = 1; }
+            elsif ($cached_pos_basic eq 'V') { $pos_v  = 1; }
+            elsif ($cached_pos_basic eq 'A') { $pos_aj = 1; }
+            else  {$pos_other = 1;}
+          }
+        }
 
         $before_resolve = $_;  # we'll need the original string for POS assignment later
         $_ = $resolve{$_}[0];
       }
+
       else {
 
 ## If these regular expressions are readable to you, you need to check-in to a psychiatric ward!
-## If Perl 6 grammars were available to me upon starting this project, the following would look much nicer
 
 ##### Verb Section #####
 
 ######## Verb Prefixes ########
         s/\b(?<!\])n(?![uAi])(\S{2,}?(?:im|id|nd|(?<!A)m|(?<![Au])i|(?<!A)d|[ruiAnmz]dn|[fCxs]tn)(?:mAn|tAn|CAn|C)?)\b/n+_$1/g; # neg. verb prefix 'n+'
-        s/(\bn\+_|\b(?<!\]))mi-(?![uAi])(\S{2,}?(?:im|id|nd|(?<!A)m|(?<!A)i|(?<!A)d)(?:mAn|tAn|CAn|C)?)\b/$1mi-+_$2/g;    # Imperfective/durative verb prefix 'mi+'
-        s/(\bn\+_|\b(?<!\]))mi(?![uAi])(?!-)(\S{2,}?(?:im|id|nd|(?<!A)m|(?<!A)i|(?<!A)d)(?:mAn|tAn|CAn|C)?)\b/$1mi+_$2/g; # Imperfective/durative verb prefix 'mi+'
+        s/(\bn\+_|\b(?<!\]))mi-?(?![uAi])(\S{2,}?(?:im|id|nd|(?<!A)m|(?<!A)i|(?<!A)d)(?:mAn|tAn|CAn|C)?)\b/$1mi-+_$2/g or  # Imperfective/durative verb prefix 'mi+'
         s/\b(?<!\])b(?![uAir])([^ ]{2,}?(?:im|id|nd|(?<!A)m|(?<!A)i|d)(?:mAn|tAn|CAn|C)?)\b/b+_$1/g;       # Subjunctive verb prefix 'be+'
 
 ######## Verb Suffixes & Enclitics ########
         s/(\S{2,}?(?:[^+ ]{2}d|[^+ ]{2}[sfCx]t|\bn\+_\S{2,}?|mi\+_\S{2,}?|b\+_\S{2,}?)(?:im|id|nd|m|(?<!A|u)i|d))(CAn|tAn|C)\b/$1_+$2/g;   # Verbal Object verb enclitic
-        s/\b(n\+_\S{2,}?|\S?mi\+_\S{2,}?|b\+_\S{2,}?)([uAi])([iI])(im|id|i)(_\+\S+?)?\b/$1$2_+0$4$5/g;    # Removes epenthesized 'i/I' before Verbal Person suffixes 'im/id/i'
+        s/\b(n\+_\S{2,}?|\S?mi\+_\S{2,}?|b\+_\S{2,}?)([uAi])([iI])(im|id|i)(_\+\S+?)?\b/$1$2$4$5/g;    # Removes epenthesized 'i/I' before Verbal Person suffixes 'im/id/i'
 
-        #s/\b(n\+_\S{2,}?|\S?mi-?\+_\S{2,}?|b\+_\S{2,}?)([uA])i(nd|d|m)(_\+\S+?)?\b/$1$2_+0$3$4/g;    # Removes epenthesized 'i' before Verbal Person suffixes 'm/d/nd'
-        s/\b(n\+_\S{2,}?|\S?mi-?\+_\S{2,}?|b\+_\S{2,}?)([uA])i(nd|d|m)(_\+\S+?)?$/$1$2_+0$3$4/g;    # Removes epenthesized 'i' before Verbal Person suffixes 'm/d/nd'
+        s/\b(n\+_\S{2,}?|\S?mi-?\+_\S{2,}?|b\+_\S{2,}?)([uA])i(nd|d|m)(_\+\S+?)?$/$1$2$3$4/g;    # Removes epenthesized 'i' before Verbal Person suffixes 'm/d/nd'
         s/((?>\S*?)(?:\S{3}(?<!A)d|\S[sfCx]t|mi-?\+_\S{2,}?|\bn\+_(?!mi)\S{2,}?|\bb\+_\S{2,}?))((?<!A)nd|id|im|d|(?<!A|u)i|m)(_\+\S*?)?\b/$1_+$2$3/g;    # Verbal Person verb suffix
-        s/(\S{2,}?)(?<!A)d_\+(nd|id|im|d|m)(_\+\S*?)?\b/$1_+d_+$2$3/g;    # Verbal tense suffix 'd' (sans ..._+d_+i  -- see recall section)
+        s/(\S{2,}?)(?<!A)d_\+(nd|id|im|d|m)(_\+\S*?)?\b/$1_+d_+$2$3/g or   # Verbal tense suffix 'd' (sans ..._+d_+i  -- see recall section)
         s/(\S+?)([sfCx])t_\+(nd|id|im|d|i|m)(_\+\S*?)?\b/$1$2_+t_+$3$4/g;  # Verbal tense suffix 't'
 
-        s/\b(\S+?)([fCxs])tn(C|CAn|tAn|mAn)\b/$1$2_+dn_+$3/g;    # Gerund (infinitive) '+tan' + pronominal enclitic
-        s/\b(\S+?)([ruiAnm])dn(C|CAn|tAn|mAn)\b/$1$2_+dn_+$3/g;  # Gerund (infinitive) '+dan' + proniminal enclitic
-        s/\b(\S{2,}?)([ruiAnm])dn\b/$1$2_+dn/g;                  # Gerund (infinitive) '+dan'
-        s/\b(\S{2,}?)([fCxs])tn\b/$1$2_+dn/g;                    # Gerund (infinitive) '+tan'
-        s/\b(\S{2,}?)([inAuzrbhskCf])ndh\b/$1$2_+ndh/g;          # Present participle '+andeh'
-        s/\b(\S{2,}?)([CrnAuimz])dh\b/$1$2_+dh/g;                # Past participle '+deh'
-        s/\b(\S{2,}?)([Cfsx])th\b/$1$2_+dh/g;                    # Past participle '+teh'
-
-        s/\b(C|z|kr|bu|dA|ur|di|br|\]m|mr|kn|ci)d(h|n)\b/$1_+d$2/g;  # Short +dan verbs, eg. 'shodan/zadan' gerund or past participle
-        s/\b(rf|gf)t(h|n)\b/$1_+d$2/g;  # Short +tan verbs, eg. 'raftan/goftan' gerund or past participle
+        s/\b(\S+?)([fCxs])tn(C|CAn|tAn|mAn)\b/$1$2_+dn_+$3/g or   # Gerund (infinitive) '+tan' + pronominal enclitic
+        s/\b(\S+?)([ruiAnm])dn(C|CAn|tAn|mAn)\b/$1$2_+dn_+$3/g or # Gerund (infinitive) '+dan' + proniminal enclitic
+        s/\b(\S{2,}?)([ruiAnm])dn\b/$1$2_+dn/g or                 # Gerund (infinitive) '+dan'
+        s/\b(\S{2,}?)([fCxs])tn\b/$1$2_+dn/g or                   # Gerund (infinitive) '+tan'
+        s/\b(\S{2,}?)([inuzrbhskCf])ndh\b/$1$2_+ndh/g or          # Present participle '+andeh'
+        s/\b(\S{2,}?)([CrnAuimz])dh\b/$1$2_+dh/g or               # Past participle '+deh'
+        s/\b(\S{2,}?)([Cfsx])th\b/$1$2_+dh/g or                   # Past participle '+teh'
+        s/\b(C|z|kr|bu|dA|ur|di|br|\]m|mr|kn|ci)d(h|n)\b/$1_+d$2/g or  # Short +dan verbs, eg. 'shodan/zadan' gerund or past participle
+        s/\b(rf|gf)t(h|n)\b/$1_+d$2/g or  # Short +tan verbs, eg. 'raftan/goftan' gerund or past participle
         s/\b(C|z|kr|bu|dA|ur|di|br|\]m|mr|kn|rsi|ci)d(nd|i|id|m|im)?\b/$1_+d_+$2/g;  # 'shodan/zadan...' simple past - temp. until resolve file works
-        s/\b(rf|gf)t(nd|i|id|m|im)?\b/$1_+t_+$2/g;  # 'raftan/goftan' simple past - temp. until resolve file works
-        s/\b(xuAh|dAr|kn|Cu|bAC)(d|nd|id|i|im|m)\b/$1_+$2/g;  # future/have - temp. until resolve file works
-        s/_\+d_\+\B/_+d/g;  # temp. until resolve file works
-        s/_\+t_\+\B/_+t/g;  # temp. until resolve file works
+        s/\b(rf|gf)t(nd|i|id|m|im)?\b/$1_+t_+$2/g or         # 'raftan/goftan' simple past - temp. until resolve file works
+        s/\b(xuAh|dAr|kn|Cu|bAC)(d|nd|id|i|im|m)\b/$1_+$2/g; # future/have - temp. until resolve file works
+        s/_\+d_\+\B/_+d/g or  # temp. until resolve file works
+        s/_\+t_\+\B/_+t/g;    # temp. until resolve file works
 
         m/(?:_\+|\+_)/ and $pos_v = 1;
 
 ######## Contractions ########
         s/\b([^+ ]{2,}?)([uAi])st(\p{P})/$1$2 Ast$3/g; # normal "[uAi] ast", is often followed by punctuation (eg. mAst vs ...mA Ast.)
 
+
 ##### Noun Section #####
-
         unless ( $pos_v ) {
-          s/\b([^+ ]{2,}?)([uA])i(CAn|C|tAn|mAn)(_\+.*?)?\b/$1$2_+0_+$3$4/g;  # Removes epenthesized 'i' before genitive pronominal enclitics
-          s/\b([^+ ]{2,}?)([^uAi+ ])(CAn|(?<!s)tAn)(_\+.*?)?\b/$1$2_+$3$4/g;     # Genitive pronominal enclitics
+          s/\b([^+ ]{2,}?)([uA])i(CAn|C|tAn|mAn)(_\+.*?)?\b/$1$2_+$3$4/g or # Removes epenthesized 'i' before genitive pronominal enclitics
+          s/\b([^+ ]{2,}?)([^uAi+ ])(CAn|(?<!s)tAn)(_\+.*?)?\b/$1$2_+$3$4/g or   # Genitive pronominal enclitics
+          s/\b([^+ ]+?)([Au])i\b/$1$2_+e/g;       # Ezafe preceded by long vowel
 
-          #s/\b([^+ ]{2,}?)(A|u)\b//g;            # Removes epenthesized 'i' before accusative enclitics
-          s/\b([^+ ]{2,}?)(?<!A)gAn\b/$1h_+An/g;  # Nominal plural suffix from stem ending in 'eh'
-          s/\b([^+ ]+?)([Au])i\b/$1$2_+e/g;        # Ezafe preceded by long vowel
-          s/\b([^+ ]{2,}?)(hA|-hA)\b/$1_+$2/g;            # Nominal plural suffix
-          s/\b([^+ ]{2,}?)(hA|-hA)(_\+\S*?)\b/$1_+$2$3/g; # Nominal plural suffix
-          s/\b([^+ ]{4,}?)(?<!st)(An)\b/$1_+$2/g;         # Plural suffix '+An'
+          ## Plural suffixes.  They're mutually exclusive, so we short circuit when possible
+          s/\b([^+ ]{2,}?)-?hA\b/$1_+-hA/g or             # Nominal plural suffix 'hA'
+          s/\b([^+ ]{2,}?)-?hA(_\+\S*?)\b/$1_+-hA$3/g or  # Nominal plural suffix 'hA' plus more suffixes
+          s/\b([^+ ]{2,}?)(?<!A)gAn\b/$1h_+An/g or        # Human plural suffix 'An' from stem ending in 'eh'
+          s/\b([^+ ]{4,}?)(?<!st)(An)\b/$1_+$2/g or       # Human plural suffix '+An'
+          s/\b([mA]\S*?)At\b/$1h_+At/g or                 # Arabic fem plural: +At
           s/\b(\S*?[$ar_chars]\S*?)At\b/$1h_+At/og;       # Arabic fem plural: +At
-          s/\b([mA]\S*?)At\b/$1h_+At/g;                # Arabic fem plural: +At
 
           m/_\+/ and $pos_n = 1;
-
         }
 
 ##### Adjective Section #####
-
         unless ( $pos_v || $pos_n ) {
-          s/\b([^+ ]+?)-?trin\b/$1_+trin/g; # Adjectival superlative suffix, optional ZWNJ
-          s/\b([^+ ]+?)-?tr\b/$1_+tr/g;     # Adjectival comparative suffix, optional ZWNJ
-          s/\b([^+ ]+?)(?<!A)gi\b/$1h_+i/g; # Adjectival suffix from stem ending in 'eh'
-          s/\b([^+ ]+?)([iI])i\b/$1_+i/g;    # '+i' suffix preceded by 'i' (various meanings)
-          s/([^+ ]+?)e\b/$1_+e/g;           # An ezafe
+          s/\b([^+ ]+?)-?trin\b/$1_+trin/g or  # Adjectival superlative suffix, optional ZWNJ
+          s/\b([^+ ]+?)-?tr\b/$1_+tr/g or      # Adjectival comparative suffix, optional ZWNJ
+          s/\b([^+ ]+?)(?<!A)gi\b/$1h_+i/g or  # Adjectival suffix from stem ending in 'eh'
+          s/\b([^+ ]+?)([iI])i\b/$1_+i/g or # '+i' suffix preceded by 'i' (various meanings)
+          s/([^+ ]+?)e\b/$1_+e/g;              # An ezafe
 
           m/_\+/ and $pos_aj = 1;
         }
