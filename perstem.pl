@@ -10,8 +10,8 @@ use strict;
 #use diagnostics;
 use Getopt::Long;
 
-my $version        = '1.3.1';
-my $date           = '2012-07-23';
+my $version        = '1.3.2';
+my $date           = '2012-07-29';
 my $copyright      = '(c) 2004-2012  Jon Dehdari - GPL v3';
 my $title          = "Perstem: Persian stemmer $version, $date - $copyright";
 my ( $dont_stem, $flush, $no_roman, $pos, $recall, $show_links, $show_only_stem, $skip_comments, $tokenize, $unvowel, $zwnj )  = undef;
@@ -240,11 +240,9 @@ while (<>) {
         s/\b(\S{2,}?)([inuzrbhskCf])ndh\b/$1$2_+ndh/g or          # Present participle '+andeh'
         s/\b(\S{2,}?)([CrnAuimz])dh\b/$1$2_+dh/g or               # Past participle '+deh'
         s/\b(\S{2,}?)([Cfsx])th\b/$1$2_+dh/g or                   # Past participle '+teh'
-        s/\b(C|z|kr|bu|dA|ur|di|br|\]m|mr|kn|ci)d(h|n)\b/$1_+d$2/g or  # Short +dan verbs, eg. 'shodan/zadan' gerund or past participle
-        s/\b(rf|gf)t(h|n)\b/$1_+d$2/g or  # Short +tan verbs, eg. 'raftan/goftan' gerund or past participle
-        s/\b(C|z|kr|bu|dA|ur|di|br|\]m|mr|kn|rsi|ci)d(nd|i|id|m|im)?\b/$1_+d_+$2/g;  # 'shodan/zadan...' simple past - temp. until resolve file works
-        s/\b(rf|gf)t(nd|i|id|m|im)?\b/$1_+t_+$2/g or         # 'raftan/goftan' simple past - temp. until resolve file works
-        s/\b(xuAh|dAr|kn|Cu|bAC)(d|nd|id|i|im|m)\b/$1_+$2/g; # future/have - temp. until resolve file works
+		s/\b(gf|kC|hs|rf|bs)t(h|n)\b/$1_+d$2/g or                 # Short +tan verbs, eg. 'rafteh, goftan' gerund or past participle
+		s/\b(kr|C|bu|dA|z|rsi|br|di|mr|kn|rsAn|ci)d(nd|i|id|m|im)?\b/$1_+d_+$2/g;  # 'shodand/zadand...' simple past - temp. until resolve file works
+        s/\b(xuAh|dAr|kn|Cu|bAC)(d|nd|id|i|im|m)\b/$1_+$2/g;      # future/have - temp. until resolve file works
         s/_\+d_\+\B/_+d/g or  # temp. until resolve file works
         s/_\+t_\+\B/_+t/g;    # temp. until resolve file works
 
@@ -504,7 +502,7 @@ jhAn	jhAn	N
 pAiAn	pAiAn	N
 miAn	miAn	N
 frmAndh	frmAndh	N
-nmAindh	nmAindh N
+nmAindh	nmAindh	N
 prundh	prundh	N
 xndh	xndh	N
 frxndh	frxndh	A
@@ -591,8 +589,11 @@ cist	ch Ast
 kjAst	kjA Ast
 xuAhd	xuAh_+d	AUX+3.SG
 ]mdh	]m_+dh	V+PSPT
+]urdh	]ur_+dh	V+PSPT
 Ast	Ast	V.3.SG.PRS
-bud	bud	V.3.SG.PST
+bAxt	bAx_+d	V+PST.3.SG
+brdh	br_+dh	V+PSPT
+bud	bu_+d	V+PST.3.SG
 budh	bu_+dh	V+PSPT
 budn	bu_+dn	V+GER
 budnd	bu_+d_+nd	V+PST+3.PL
@@ -600,28 +601,43 @@ Cdh	C_+dh	V+PSPT
 Cdn	C_+dn	V+GER
 Cud	Cu_+d	V.PRS+3.SG
 Cundh	Cu_+ndh	V.PRS+PRPT
+dACt	dAC_+d	V+PST.3.SG
 dACth	dAC_+dh	V+PSPT
 dAdh	dA_+dh	V+PSPT
 dAdn	dA_+dn	V+GER
 dAdnd	dA_+d_+nd	V+PST+3.PL
+dAnst	dAns_+d	V+PST.3.SG
 dArd	dAr_+d	V.PRS+3.SG
 dhd	dh_+d	V.PRS+3.SG
 dhndh	dh_+ndh	V.PRS+PRPT
 didn	di_+dn	V+GER
 didh	di_+dh	V+PSPT
 binndh	bin_+ndh	V.PRS+PRPT
+gft	gf_+d	V+PST.3.SG
+gLACt	gLAC_+d	V+PST.3.SG
 gLACth	gLAC_+dh	V+PSPT
 gLCth	gLC_+dh	V+PSPT
 grfth	grf_+dh	V+PSPT
+grft	grf_+d	V+PST.3.SG
+iAft	iAf_+d	V+PST.3.SG
+kCt	kC_+d	V+PST.3.SG
 knnd	kn_+nd	V.PRS+3.PL
 knndh	kn_+ndh	V.PRS+PRPT
 knd	kn_+d	V.PRS+3.SG
 krdn	kr_+dn	V+GER
 krdh	kr_+dh	V+PSPT
 krdnd	kr_+d_+nd	V	V+PST+3.PL
+hst	hs_+d	V+PST.3.SG
 nCdh	n+_C_+dh	V+NEG+PSPT
 nist	n+_Ast	V+NEG+3.SG.PRS
+ntuAnst	ntuAns_+d	V+PST.3.SG
+prdAxt	prdAx_+d	V+PST.3.SG
+rft	rf_+d	V+PST.3.SG
+sAxt	sAx_+d	V+PST.3.SG
 sAxth	sAx_+dh	V+PSPT
+tuAnst	tuAns_+d	V+PST.3.SG
+xuAst	xuAs_+d	V+PST.3.SG
 zdh	z_+dh	V+PSPT
+zdn	z_+dn	V+GER
 zdnd	z_+d_+nd	V+PST+3.PL
 znndh	zn_+ndh	V.PRS+PRPT
