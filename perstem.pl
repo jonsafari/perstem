@@ -10,15 +10,17 @@ use strict;
 #use diagnostics;
 use Getopt::Long;
 
-my $version        = '1.3.3';
+my $version        = '1.3.4';
 my $date           = '2012-07-30';
 my $copyright      = '(c) 2004-2012  Jon Dehdari - GPL v3';
 my $title          = "Perstem: Persian stemmer $version, $date - $copyright";
-my ( $dont_stem, $flush, $no_roman, $pos, $recall, $show_links, $show_only_stem, $skip_comments, $tokenize, $unvowel, $zwnj )  = undef;
+my ( $dont_stem, $flush, $use_irreg_stems, $no_roman, $pos, $recall, $show_links, $show_only_stem, $skip_comments, $tokenize, $unvowel, $zwnj )  = undef;
 my ( $pos_v, $pos_n, $pos_aj, $pos_other, $before_resolve )  = undef;
-my %resolve;
+my (%resolve, %irreg_stems) = undef;
 my $ar_chars       = 'EqHSTDZLVU';
 #my $longvowel     = 'Aui]';
+### Temporary placement here
+my $irreg_stems = "]\t]m\n]muz\t]mux\nAndAz\tAndAx\n]ur\t]ur\nbr\tbr\nbnd\tbs\nbAC\tbu\npz\tpx\npLir\tpLirf\nprdAz\tprdAx\npiund\tpius\ntuAn\ttuAns\nju\tjs\nxuAh\txuAs\ndh\tdA\ndAr\tdAC\ndAn\tdAns\nbin\tdi\nru\trf\nzn\tz\nsAz\tsAx\nspAr\tspr\nCu\tC\nCkn\tCks\nCmAr\tCmr\nCnAs\tCnAx\nCnu\tCni\nfruC\tfrux\nfCAr\tfCr\nkn\tkr\ngLAr\tgLAC\ngLr\tgLC\ngir\tgrf\ngrd\tgC\ngu\tgf\nmir\tmr\nnmA\tnmu\nnuis\tnuC\niAb\tiAf\n";
 
 ### Defaults
 my $pos_sep = '/';
@@ -38,6 +40,7 @@ Options:
       --flush            Autoflush buffer output after every line
   -h, --help             Print usage
   -i, --input <type>     Input character encoding type {cp1256,isiri3342,roman,utf8,unihtml}
+      --irreg-stem       Resolve irregular present-tense verb stems to their past-tense stems (eg. kon -> kar)
   -l, --links            Show morphological links
   -n, --noroman          Delete all non-Arabic script characters (eg. HTML tags)
   -o, --output <type>    Output character encoding type {arabtex,cp1256,isiri3342,roman,utf8,unihtml}
@@ -59,6 +62,7 @@ GetOptions(
   'flush'         => \$flush,
   'h|help|?'      => sub { print $usage; exit; },
   'i|input:s'     => \$input_type,
+  'irreg-stem'    => \$use_irreg_stems,
   'l|links'       => \$show_links,
   'n|noroman'     => \$no_roman,
   'o|output:s'    => \$output_type,
@@ -90,6 +94,17 @@ while (my $resolve = <DATA>) {
   $resolve{"$resolve[0]"} = [$resolve[1], $resolve[2]];
 }
 
+### Open Irregular Verb Stem section
+if ($use_irreg_stems) {
+  my @lines = split "\n", $irreg_stems;
+  foreach (@lines) {
+    next if m/^#/;
+    chomp;
+    my @line = split /\t/, $_;
+    $irreg_stems{"$line[0]"} = [ $line[1] ];
+  }
+}
+
 
 ### A hack for what Perl should have already done: support at runtime BOTH utf8 & other input/output types
 if ($input_type eq 'utf8') { # UTF-8 input
@@ -113,7 +128,7 @@ while (<>) {
 
   if ( /^$/ | /^\s+$/ | /^#/ ) {	# Treat empty or commented-out lines
     if ($skip_comments) { next; }	# Don't even print them out
-    else { print; next; }		# At least print them out
+    else { print; next; }			# At least print them out
   }
   tr/\r/\n/d;	# Deletes lame DOS carriage returns
   s/\n/ ====/;	# Converts newlines to temporary placeholder ====
@@ -121,8 +136,8 @@ while (<>) {
 ### Tokenizes punctuation
   if ( $tokenize ) {
     s/([,.;:!?(){}«»#\/])/ $1 /g;	# Pads punctuation w/ spaces
-    s/(?<!.)(\d+)/ $1 /g;		# Pads numbers w/ spaces
-    s/(\s){2,}/$1/g;			# Removes multiple spaces
+    s/(?<!.)(\d+)/ $1 /g;			# Pads numbers w/ spaces
+    s/(\s){2,}/$1/g;				# Removes multiple spaces
   }
 
 ### Converts from native script to romanized transliteration
@@ -225,7 +240,7 @@ while (<>) {
         s/\b(?<!\])b(?![uAir])([^ ]{2,}?(?:im|id|nd|(?<!A)m|(?<!A)i|d)(?:mAn|tAn|CAn|C)?)\b/b+_$1/g;       # Subjunctive verb prefix 'be+'
 
 ######## Verb Suffixes & Enclitics ########
-		#s/((?:[^+ ]{2}d|[^+ ]{2}[sfCx]t|\bn\+_\S{2,}?|mi\+_\S{2,}?|b\+_\S{2,}?)(?:im|id|nd|m|(?<!A|u)i|d))(CAn|tAn|C)\b/$1_+$2/g;   # Verbal Object verb enclitic
+        #s/((?:[^+ ]{2}d|[^+ ]{2}[sfCx]t|\bn\+_\S{2,}?|mi\+_\S{2,}?|b\+_\S{2,}?)(?:im|id|nd|m|(?<!A|u)i|d))(CAn|tAn|C)\b/$1_+$2/g;   # Verbal Object verb enclitic
         s/\b(n\+_\S{2,}?|\S?mi\+_\S{2,}?|b\+_\S{2,}?)([uAi])([iI])(im|id|i)(_\+\S+?)?\b/$1$2$4$5/g;    # Removes epenthesized 'i/I' before Verbal Person suffixes 'im/id/i'
 
         s/\b(n\+_\S{2,}?|\S?mi-?\+_\S{2,}?|b\+_\S{2,}?)([uA])i(nd|d|m)(_\+\S+?)?$/$1$2$3$4/g;    # Removes epenthesized 'i' before Verbal Person suffixes 'm/d/nd'
@@ -240,13 +255,14 @@ while (<>) {
         s/\b(\S{2,}?)([inuzrbhskCf])ndh\b/$1$2_+ndh/g or          # Present participle '+andeh'
         s/\b(\S{2,}?)([CrnAuimz])dh\b/$1$2_+dh/g or               # Past participle '+deh'
         s/\b(\S{2,}?)([Cfsx])th\b/$1$2_+dh/g or                   # Past participle '+teh'
-		s/\b(gf|kC|hs|rf|bs)t(h|n)\b/$1_+d$2/g or                 # Short +tan verbs, eg. 'rafteh, goftan' gerund or past participle
-		s/\b(kr|C|bu|dA|z|rsi|br|di|mr|kn|rsAn|ci)d(nd|i|id|m|im)?\b/$1_+d_+$2/g;  # 'shodand/zadand...' simple past - temp. until resolve file works
+        s/\b(gf|kC|hs|rf|bs)t(h|n)\b/$1_+d$2/g or                 # Short +tan verbs, eg. 'rafteh, goftan' gerund or past participle
+        s/\b(kr|C|bu|dA|z|rsi|br|di|mr|kn|rsAn|ci)d(nd|i|id|m|im)?\b/$1_+d_+$2/g;  # 'shodand/zadand...' simple past - temp. until resolve file works
         s/\b(xuAh|dAr|kn|Cu|bAC)(d|nd|id|i|im|m)\b/$1_+$2/g;      # future/have - temp. until resolve file works
         s/_\+d_\+\B/_+d/g or  # temp. until resolve file works
         s/_\+t_\+\B/_+t/g;    # temp. until resolve file works
 
         m/(?:_\+|\+_)/ and $pos_v = 1;
+
 
 ######## Contractions ########
         s/\b([^+ ]{2,}?)([uAi])st(\p{P})/$1$2 Ast$3/g; # normal "[uAi] ast", is often followed by punctuation (eg. mAst vs ...mA Ast.)
@@ -303,6 +319,15 @@ while (<>) {
         }
 
       } # ends else -- not found in Resolve section
+
+
+### Resolve irregular present-tense verb stem to their past-tense stem
+      if ($pos_v and $use_irreg_stems) {
+        my $stem = $_;
+        $stem =~ s/\b[^ ]+\+_([^ ]+?)\b/$1/g;  # Removes prefixes
+        $stem =~ s/\b([^ ]+?)_\+[^ ]+\b/$1/g;  # Removes suffixes
+        s/\Q${stem}\E/$irreg_stems{$stem}[0]/  if $irreg_stems{$stem};
+      }
 
 ### Deletes everything but the stem
       if ( $show_only_stem ) {
