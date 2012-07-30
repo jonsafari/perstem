@@ -10,8 +10,8 @@ use strict;
 #use diagnostics;
 use Getopt::Long;
 
-my $version        = '1.3.2';
-my $date           = '2012-07-29';
+my $version        = '1.3.3';
+my $date           = '2012-07-30';
 my $copyright      = '(c) 2004-2012  Jon Dehdari - GPL v3';
 my $title          = "Perstem: Persian stemmer $version, $date - $copyright";
 my ( $dont_stem, $flush, $no_roman, $pos, $recall, $show_links, $show_only_stem, $skip_comments, $tokenize, $unvowel, $zwnj )  = undef;
@@ -225,7 +225,7 @@ while (<>) {
         s/\b(?<!\])b(?![uAir])([^ ]{2,}?(?:im|id|nd|(?<!A)m|(?<!A)i|d)(?:mAn|tAn|CAn|C)?)\b/b+_$1/g;       # Subjunctive verb prefix 'be+'
 
 ######## Verb Suffixes & Enclitics ########
-        s/(\S{2,}?(?:[^+ ]{2}d|[^+ ]{2}[sfCx]t|\bn\+_\S{2,}?|mi\+_\S{2,}?|b\+_\S{2,}?)(?:im|id|nd|m|(?<!A|u)i|d))(CAn|tAn|C)\b/$1_+$2/g;   # Verbal Object verb enclitic
+		#s/((?:[^+ ]{2}d|[^+ ]{2}[sfCx]t|\bn\+_\S{2,}?|mi\+_\S{2,}?|b\+_\S{2,}?)(?:im|id|nd|m|(?<!A|u)i|d))(CAn|tAn|C)\b/$1_+$2/g;   # Verbal Object verb enclitic
         s/\b(n\+_\S{2,}?|\S?mi\+_\S{2,}?|b\+_\S{2,}?)([uAi])([iI])(im|id|i)(_\+\S+?)?\b/$1$2$4$5/g;    # Removes epenthesized 'i/I' before Verbal Person suffixes 'im/id/i'
 
         s/\b(n\+_\S{2,}?|\S?mi-?\+_\S{2,}?|b\+_\S{2,}?)([uA])i(nd|d|m)(_\+\S+?)?$/$1$2$3$4/g;    # Removes epenthesized 'i' before Verbal Person suffixes 'm/d/nd'
@@ -539,6 +539,7 @@ Ardn	Ardn	N
 ]mrikA	]mrikA	N
 ]mrikAii	]mrikA_+i
 AnsAni	AnsAn_+i	N
+bnglAdC	bnglAdC	N
 thrAn	thrAn	N
 pArlmAn	pArlmAn	N
 zbAnhAi	zbAn_+hA_+e	N+PL+EZ
