@@ -10,7 +10,7 @@ use strict;
 #use diagnostics;
 use Getopt::Long;
 
-my $version        = '1.3.4.1';
+my $version        = '1.3.4.2';
 my $date           = '2012-07-31';
 my $copyright      = '(c) 2004-2012  Jon Dehdari - GPL v3';
 my $title          = "Perstem: Persian stemmer $version, $date - $copyright";
@@ -20,7 +20,7 @@ my (%resolve, %irreg_stems) = undef;
 my $ar_chars       = 'EqHSTDZLVU';
 #my $longvowel     = 'Aui]';
 ### Temporary placement here
-my $irreg_stems = "]\t]m\n]muz\t]mux\nAndAz\tAndAx\n]ur\t]ur\nbr\tbr\nbnd\tbs\nbAC\tbu\npz\tpx\npLir\tpLirf\nprdAz\tprdAx\npiund\tpius\ntuAn\ttuAns\nju\tjs\nxuAh\txuAs\ndh\tdA\ndAr\tdAC\ndAn\tdAns\nbin\tdi\nru\trf\nzn\tz\nsAz\tsAx\nspAr\tspr\nCu\tC\nCkn\tCks\nCmAr\tCmr\nCnAs\tCnAx\nCnu\tCni\nfruC\tfrux\nfCAr\tfCr\nkn\tkr\ngLAr\tgLAC\ngLr\tgLC\ngir\tgrf\ngrd\tgC\ngu\tgf\nmir\tmr\nnmA\tnmu\nnuis\tnuC\niAb\tiAf\n";
+my $irreg_stems = "]\t]m\n]muz\t]mux\nAndAz\tAndAx\nbnd\tbs\nbAC\tbu\npz\tpx\npLir\tpLirf\nprdAz\tprdAx\npiund\tpius\ntuAn\ttuAns\nju\tjs\nxuAh\txuAs\ndh\tdA\ndAr\tdAC\ndAn\tdAns\nbin\tdi\nru\trf\nzn\tz\nsAz\tsAx\nspAr\tspr\nCu\tC\nCkn\tCks\nCmAr\tCmr\nCnAs\tCnAx\nCnu\tCni\nfruC\tfrux\nfCAr\tfCr\nkn\tkr\ngLAr\tgLAC\ngLr\tgLC\ngir\tgrf\ngrd\tgC\ngu\tgf\nmir\tmr\nnmA\tnmu\nnuis\tnuC\niAb\tiAf\n";
 
 ### Defaults
 my $pos_sep = '/';
