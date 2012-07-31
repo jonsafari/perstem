@@ -10,8 +10,8 @@ use strict;
 #use diagnostics;
 use Getopt::Long;
 
-my $version        = '1.3.4';
-my $date           = '2012-07-30';
+my $version        = '1.3.4.1';
+my $date           = '2012-07-31';
 my $copyright      = '(c) 2004-2012  Jon Dehdari - GPL v3';
 my $title          = "Perstem: Persian stemmer $version, $date - $copyright";
 my ( $dont_stem, $flush, $use_irreg_stems, $no_roman, $pos, $recall, $show_links, $show_only_stem, $skip_comments, $tokenize, $unvowel, $zwnj )  = undef;
@@ -212,7 +212,7 @@ while (<>) {
       ( $pos_v, $pos_n, $pos_aj, $pos_other) = undef;
 
       if ( $resolve{$_} ) { # word is found in Resolve section
-        if ($pos) {
+        if ($pos or $use_irreg_stems) {
           my $cached_pos_full  = $resolve{$_}[1];
           if ($cached_pos_full) { # Some entries don't have a part-of-speech
             my $cached_pos_basic = substr($cached_pos_full, 0, 1);
