@@ -10,14 +10,14 @@ use strict;
 #use diagnostics;
 use Getopt::Long;
 
-my $version        = '1.3.4.2';
-my $date           = '2012-07-31';
+my $version        = '1.3.5';
+my $date           = '2012-08-01';
 my $copyright      = '(c) 2004-2012  Jon Dehdari - GPL v3';
 my $title          = "Perstem: Persian stemmer $version, $date - $copyright";
 my ( $dont_stem, $flush, $use_irreg_stems, $no_roman, $pos, $recall, $show_links, $show_only_stem, $skip_comments, $tokenize, $unvowel, $zwnj )  = undef;
 my ( $pos_v, $pos_n, $pos_aj, $pos_other, $before_resolve )  = undef;
 my (%resolve, %irreg_stems) = undef;
-my $ar_chars       = 'EqHSTDZLVU';
+my $ar_chars       = 'BEqHSTDZLVU';
 #my $longvowel     = 'Aui]';
 ### Temporary placement here
 my $irreg_stems = "]\t]m\n]muz\t]mux\nAndAz\tAndAx\nbnd\tbs\nbAC\tbu\npz\tpx\npLir\tpLirf\nprdAz\tprdAx\npiund\tpius\ntuAn\ttuAns\nju\tjs\nxuAh\txuAs\ndh\tdA\ndAr\tdAC\ndAn\tdAns\nbin\tdi\nru\trf\nzn\tz\nsAz\tsAx\nspAr\tspr\nCu\tC\nCkn\tCks\nCmAr\tCmr\nCnAs\tCnAx\nCnu\tCni\nfruC\tfrux\nfCAr\tfCr\nkn\tkr\ngLAr\tgLAC\ngLr\tgLC\ngir\tgrf\ngrd\tgC\ngu\tgf\nmir\tmr\nnmA\tnmu\nnuis\tnuC\niAb\tiAf\n";
@@ -236,14 +236,15 @@ while (<>) {
 
 ######## Verb Prefixes ########
         s/\b(?<!\])n(?![uAi])(\S{2,}?(?:im|id|nd|(?<!A)m|(?<![Au])i|(?<!A)d|[ruiAnmz]dn|[fCxs]tn)(?:mAn|tAn|CAn|C)?)\b/n+_$1/g; # neg. verb prefix 'n+'
-        s/(\bn\+_|\b(?<!\]))mi-?(?![uAi])(\S{2,}?(?:im|id|nd|(?<!A)m|(?<!A)i|(?<!A)d)(?:mAn|tAn|CAn|C)?)\b/$1mi-+_$2/g or  # Imperfective/durative verb prefix 'mi+'
-        s/\b(?<!\])b(?![uAir])([^ ]{2,}?(?:im|id|nd|(?<!A)m|(?<!A)i|d)(?:mAn|tAn|CAn|C)?)\b/b+_$1/g;       # Subjunctive verb prefix 'be+'
+        s/(\bn\+_|\b(?<!\]))mi-?(?!u|An)(\S{2,}?(?:im|id|nd|(?<!A)m|(?<!A)i|(?<!A)d)(?:mAn|tAn|CAn|C)?)\b/$1mi-+_$2/g or  # Imperfective/durative verb prefix 'mi+'
+        s/\b(?<!\])b(?![uAr])([^ ]{2,}?(?:im|id|nd|(?<!A)m|(?<![Aui])i|d)(?:mAn|tAn|CAn|C)?)\b/b+_$1/g;       # Subjunctive verb prefix 'be+'
+		s/\b(n\+_)?mi-\+_A/$1mi-+_]/g or	# Removes epenthetic yeh following 'mi+' and before alef madda in stem
+		s/\bb\+_iA/b+_]/g;					# Removes epenthetic yeh following 'be+' and before alef madda in stem
 
 ######## Verb Suffixes & Enclitics ########
         #s/((?:[^+ ]{2}d|[^+ ]{2}[sfCx]t|\bn\+_\S{2,}?|mi\+_\S{2,}?|b\+_\S{2,}?)(?:im|id|nd|m|(?<!A|u)i|d))(CAn|tAn|C)\b/$1_+$2/g;   # Verbal Object verb enclitic
-        s/\b(n\+_\S{2,}?|\S?mi\+_\S{2,}?|b\+_\S{2,}?)([uAi])([iI])(im|id|i)(_\+\S+?)?\b/$1$2$4$5/g;    # Removes epenthesized 'i/I' before Verbal Person suffixes 'im/id/i'
-
-        s/\b(n\+_\S{2,}?|\S?mi-?\+_\S{2,}?|b\+_\S{2,}?)([uA])i(nd|d|m)(_\+\S+?)?$/$1$2$3$4/g;    # Removes epenthesized 'i' before Verbal Person suffixes 'm/d/nd'
+		s/\b(n\+_\S{1,}?|\S?mi-?\+_\S*?|b\+_\S*?)([\]uA])([iI])(im|id|i)(_\+\S+?)?\b/$1$2_+$4$5/g or    # Removes epenthetic yeh/yeh-hamza before Verbal Person suffixes 'im/id/i'
+        s/\b(n\+_\S{1,}?|\S?mi-?\+_\S*?|b\+_\S*?)([\]uA])i(nd|d|m)(_\+\S+?)?$/$1$2_+$3$4/g or    # Removes epenthetic yeh before Verbal Person suffixes 'm/d/nd'
         s/((?>\S*?)(?:\S{3}(?<!A)d|\S[sfCx]t|mi-?\+_\S{2,}?|\bn\+_(?!mi)\S{2,}?|\bb\+_\S{2,}?))((?<!A)nd|id|im|d|(?<!A|u)i|m)(_\+\S*?)?\b/$1_+$2$3/g;    # Verbal Person verb suffix
         s/(\S{2,}?)(?<!A)d_\+(nd|id|im|d|m)(_\+\S*?)?\b/$1_+d_+$2$3/g or   # Verbal tense suffix 'd' (sans ..._+d_+i  -- see recall section)
         s/(\S+?)([sfCx])t_\+(nd|id|im|d|i|m)(_\+\S*?)?\b/$1$2_+t_+$3$4/g;  # Verbal tense suffix 't'
@@ -270,7 +271,7 @@ while (<>) {
 
 ##### Noun Section #####
         unless ( $pos_v ) {
-          s/\b([^+ ]{2,}?)([uA])i(CAn|C|tAn|mAn)(_\+.*?)?\b/$1$2_+$3$4/g or # Removes epenthesized 'i' before genitive pronominal enclitics
+          s/\b([^+ ]{2,}?)([uA])i(CAn|C|tAn|mAn)(_\+.*?)?\b/$1$2_+$3$4/g or # Removes epenthetic yeh before genitive pronominal enclitics
           s/\b([^+ ]{2,}?)([^uAi+ ])(CAn|(?<!s)tAn)(_\+.*?)?\b/$1$2_+$3$4/g or   # Genitive pronominal enclitics
           s/\b([^+ ]+?)([Au])i\b/$1$2_+e/g;       # Ezafe preceded by long vowel
 
@@ -396,7 +397,7 @@ while (<>) {
 
 ### Deletes word boundaries ' ' from morpheme links '_+'/'+_'
     unless ( $show_links ) {
-      s/_\+0/ /g;  # Removes epenthesized letters
+      s/_\+0/ /g;  # Removes epenthetic letters
       s/_\+-/ /g;  # Removes suffix links w/ ZWNJs
       s/_\+/ /g;   # Removes all suffix links
       s/-\+_/ /g;  # Removes prefix links w/ ZWNJs
@@ -530,9 +531,11 @@ frmAndh	frmAndh	N
 nmAindh	nmAindh	N
 prundh	prundh	N
 xndh	xndh	N
-frxndh	frxndh	A
 biCtr	biCtr	A
 digr	digr	A
+nhAii	nhAii	A
+nhAIi	nhAii	A
+frxndh	frxndh	A
 ]indh	]i_+ndh	A+PRPT
 frhngi	frhngi
 tnhA	tnhA
@@ -571,6 +574,7 @@ zbAnhAi	zbAn_+hA_+e	N+PL+EZ
 zbAnhA	zbAn_+hA	N+PL
 kCurhAi	kCur_+hA_+e	N+PL+EZ
 kCurhA	kCur_+hA	N+PL
+tBsisAt	tBsis_+At	N+PL
 mrdm	mrd_+m	N
 dftr	dftr	N
 dfAtr	dftr	N
