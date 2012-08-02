@@ -10,7 +10,7 @@ use strict;
 #use diagnostics;
 use Getopt::Long;
 
-my $version        = '1.3.7';
+my $version        = '1.3.8';
 my $date           = '2012-08-02';
 my $copyright      = '(c) 2004-2012  Jon Dehdari - GPL v3';
 my $title          = "Perstem: Persian stemmer $version, $date - $copyright";
@@ -234,22 +234,22 @@ while (<>) {
 ##### Verb Section #####
 
 ######## Verb Prefixes ########
-        s/\bn(?![uAi])(\S{2,}?(?:im|id|nd|(?<!A)m|(?<![Au])i|(?<!A)d|[ruiAnmz]dn|[fCxs]tn)(?:mAn|tAn|CAn|C)?)\b/n+_$1/g; # neg. verb prefix 'n+'
-        s/\b(n\+_)mi-?(?!u|An)(\S{2,}?(?:im|id|nd|(?<!A)m|(?<!A)i|(?<!A)d)(?:mAn|tAn|CAn|C)?)\b/$1mi-+_$2/g or  # Imperfective/durative verb prefix 'mi+'
-        s/\bb(?![uAr])([^ ]{2,}?(?:im|id|nd|(?<!A)m|(?<![Aui])i|d)(?:mAn|tAn|CAn|C)?)\b/b+_$1/g;       # Subjunctive verb prefix 'be+'
+        s/\bn(?![uAi])(\S{2,}?(?:im|id|nd|(?<!A)m|(?<![Aug])i|(?<!A)d|[ruiAnmz]dn|[fCxs]tn)(?:mAn|tAn|CAn|C)?)\b/n+_$1/g; # neg. verb prefix 'n+'
+        s/\b(n\+_)mi-?(?!u|An)(\S{2,}?(?:im|id|nd|(?<!A)m|(?<![Aug])i|(?<!A)d)(?:mAn|tAn|CAn|C)?)\b/$1mi-+_$2/g or  # Imperfective/durative verb prefix 'mi+'
+        s/\bb(?![uAr])([^ ]{2,}?(?:im|id|nd|(?<!A)m|(?<![Auig])i|d)(?:mAn|tAn|CAn|C)?)\b/b+_$1/g;       # Subjunctive verb prefix 'be+'
         s/\b(n\+_)?mi-\+_A/$1mi-+_O/g or  # Removes epenthetic yeh following 'mi+' and before alef madda in stem
         s/\bb\+_iA/b+_O/g;                # Removes epenthetic yeh following 'be+' and before alef madda in stem
 
 ######## Verb Suffixes & Enclitics ########
         #s/((?:[^+ ]{2}d|[^+ ]{2}[sfCx]t|\bn\+_\S{2,}?|mi\+_\S{2,}?|b\+_\S{2,}?)(?:im|id|nd|m|(?<!A|u)i|d))(CAn|tAn|C)\b/$1_+$2/g;   # Verbal Object verb enclitic
-        s/\b(n\+_\S{1,}?|\S?mi-?\+_\S*?|b\+_\S*?)([OuA])([iI])(im|id|i)(_\+\S+?)?\b/$1$2_+$4$5/g or    # Removes epenthetic yeh/yeh-hamza before Verbal Person suffixes 'im/id/i'
-        s/\b(n\+_\S{1,}?|\S?mi-?\+_\S*?|b\+_\S*?)([OuA])i(nd|d|m)(_\+\S+?)?$/$1$2_+$3$4/g or    # Removes epenthetic yeh before Verbal Person suffixes 'm/d/nd'
-        s/((?>\S*?)(?:\S{3}(?<!A)d|\S[sfCx]t|mi-?\+_\S{2,}?|\bn\+_(?!mi)\S{2,}?|\bb\+_\S{2,}?))((?<!A)nd|id|im|d|(?<!A|u)i|m)(_\+\S*?)?\b/$1_+$2$3/g;    # Verbal Person verb suffix
+        s/\b(n\+_\S{1,}?|\S?mi-?\+_\S*?|b\+_\S*?)([uAO])([iI])(im|id|i)(_\+\S+?)?\b/$1$2_+$4$5/g or    # Removes epenthetic yeh/yeh-hamza before Verbal Person suffixes 'im/id/i'
+        s/\b(n\+_\S{1,}?|\S?mi-?\+_\S*?|b\+_\S*?)([AuO])i(nd|d|m)(_\+\S+?)?$/$1$2_+$3$4/g or    # Removes epenthetic yeh before Verbal Person suffixes 'm/d/nd'
+        s/((?>\S*?)(?:\S{3}(?<!A)d|\S[sfCx]t|mi-?\+_\S{2,}?|\bn\+_(?!mi)\S{2,}?|\bb\+_\S{2,}?))((?<!A)nd|id|im|d|(?<![Aug])i|m)(_\+\S*?)?\b/$1_+$2$3/g;    # Verbal Person verb suffix
         s/(\S{2,}?)(?<!A)d_\+(nd|id|im|d|m)(_\+\S*?)?\b/$1_+d_+$2$3/g or   # Verbal tense suffix 'd' (sans ..._+d_+i  -- see recall section)
         s/(\S+?)([sfCx])t_\+(nd|id|im|d|i|m)(_\+\S*?)?\b/$1$2_+t_+$3$4/g;  # Verbal tense suffix 't'
 
         s/\b(\S+?)([fCxs])tn(C|CAn|tAn|mAn)\b/$1$2_+dn_+$3/g or   # Gerund (infinitive) '+tan' + pronominal enclitic
-        s/\b(\S+?)([ruiAnm])dn(C|CAn|tAn|mAn)\b/$1$2_+dn_+$3/g or # Gerund (infinitive) '+dan' + proniminal enclitic
+        s/\b(\S+?)([ruiAnm])dn(C|CAn|tAn|mAn)\b/$1$2_+dn_+$3/g or # Gerund (infinitive) '+dan' + pronominal enclitic
         s/\b(\S{2,}?)([ruiAnm])dn\b/$1$2_+dn/g or                 # Gerund (infinitive) '+dan'
         s/\b(\S{2,}?)([fCxs])tn\b/$1$2_+dn/g or                   # Gerund (infinitive) '+tan'
         s/\b(\S{2,}?)([inuzrbhskCf])ndh\b/$1$2_+ndh/g or          # Present participle '+andeh'
@@ -529,12 +529,13 @@ frmAndh	frmAndh	N
 nmAindh	nmAindh	N
 prundh	prundh	N
 xndh	xndh	N
+bzrgi	bzrg_+i	N+ATTR
 biCtr	biCtr	A
 digr	digr	A
 nhAii	nhAii	A
 nhAIi	nhAii	A
 frxndh	frxndh	A
-Oindh	Oi_+ndh	A+PRPT
+Oindh	O_+ndh	A+PRPT
 frhngi	frhngi
 tnhA	tnhA
 AntxAbAt	AntxAbAt	N
