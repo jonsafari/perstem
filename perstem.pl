@@ -10,8 +10,8 @@ use strict;
 #use diagnostics;
 use Getopt::Long;
 
-my $version        = '1.3.6';
-my $date           = '2012-08-01';
+my $version        = '1.3.7';
+my $date           = '2012-08-02';
 my $copyright      = '(c) 2004-2012  Jon Dehdari - GPL v3';
 my $title          = "Perstem: Persian stemmer $version, $date - $copyright";
 my ( $dont_stem, $flush, $use_irreg_stems, $no_roman, $pos, $recall, $show_links, $show_only_stem, $skip_comments, $tokenize, $unvowel, $zwnj )  = undef;
@@ -24,8 +24,8 @@ my $irreg_stems = "O\tOm\nOmuz\tOmux\nAndAz\tAndAx\nbnd\tbs\nbAC\tbu\npz\tpx\npL
 
 ### Defaults
 my $pos_sep = '/';
-my $input_type  = 'roman';	# default is roman input
-my $output_type = 'roman';	# default is roman output
+my $input_type  = 'roman'; # default is roman input
+my $output_type = 'roman'; # default is roman output
 
 my $usage       = <<"END_OF_USAGE";
 ${title}
@@ -126,18 +126,18 @@ while (<>) {
 
   my $full_line;
 
-  if ( /^$/ | /^\s+$/ | /^#/ ) {	# Treat empty or commented-out lines
-    if ($skip_comments) { next; }	# Don't even print them out
-    else { print; next; }			# At least print them out
+  if ( /^$/ | /^\s+$/ | /^#/ ) {  # Treat empty or commented-out lines
+    if ($skip_comments) { next; } # Don't even print them out
+    else { print; next; }         # At least print them out
   }
-  tr/\r/\n/d;	# Deletes lame DOS carriage returns
-  s/\n/ ====/;	# Converts newlines to temporary placeholder ====
+  tr/\r/\n/d;  # Deletes lame DOS carriage returns
+  s/\n/ ====/; # Converts newlines to temporary placeholder ====
 
 ### Tokenizes punctuation
   if ( $tokenize ) {
-    s/([,.;:!?(){}«»#\/])/ $1 /g;	# Pads punctuation w/ spaces
-    s/(?<!.)(\d+)/ $1 /g;			# Pads numbers w/ spaces
-    s/(\s){2,}/$1/g;				# Removes multiple spaces
+    s/([,.;:!?(){}«»#\/])/ $1 /g;  # Pads punctuation w/ spaces
+    s/(?<!.)(\d+)/ $1 /g;          # Pads numbers w/ spaces
+    s/(\s){2,}/$1/g;               # Removes multiple spaces
   }
 
 ### Converts from native script to romanized transliteration
@@ -197,13 +197,13 @@ while (<>) {
 
     #Inserts ZWNJ's where they should have been originally, but weren't
     if ( $zwnj ) {
-      s/(?<![a-zA-Z])mi /mi-/g;				# 'mi-'
-      s/(?<![a-zA-Z])nmi /nmi-/g;			# 'nmi-'
-      s/(?<![a-zA-Z])nmi(\S{6,})/nmi-$1/g;	# 'nmi-'
-      s/ hA(?![a-zA-Z])/-hA/g;				# '-hA'
-      s/ hAi(?![a-zA-Z])/-hAi/g;			# '-hAi'
-      s/(\S{6,})hAi(?![a-zA-Z])/$1-hAi/g;	# '-hAi'
-      s/h Ai(?![a-zA-Z])/h-Ai/g;			# '+h-Ai'
+      s/(?<![a-zA-Z])mi /mi-/g;             # 'mi-'
+      s/(?<![a-zA-Z])nmi /nmi-/g;           # 'nmi-'
+      s/(?<![a-zA-Z])nmi(\S{6,})/nmi-$1/g;  # 'nmi-'
+      s/ hA(?![a-zA-Z])/-hA/g;              # '-hA'
+      s/ hAi(?![a-zA-Z])/-hAi/g;            # '-hAi'
+      s/(\S{6,})hAi(?![a-zA-Z])/$1-hAi/g;   # '-hAi'
+      s/h Ai(?![a-zA-Z])/h-Ai/g;            # '+h-Ai'
     }
 
     unless ($dont_stem){ # Do stemming regexes unless $dont_stem is true
@@ -237,12 +237,12 @@ while (<>) {
         s/\bn(?![uAi])(\S{2,}?(?:im|id|nd|(?<!A)m|(?<![Au])i|(?<!A)d|[ruiAnmz]dn|[fCxs]tn)(?:mAn|tAn|CAn|C)?)\b/n+_$1/g; # neg. verb prefix 'n+'
         s/\b(n\+_)mi-?(?!u|An)(\S{2,}?(?:im|id|nd|(?<!A)m|(?<!A)i|(?<!A)d)(?:mAn|tAn|CAn|C)?)\b/$1mi-+_$2/g or  # Imperfective/durative verb prefix 'mi+'
         s/\bb(?![uAr])([^ ]{2,}?(?:im|id|nd|(?<!A)m|(?<![Aui])i|d)(?:mAn|tAn|CAn|C)?)\b/b+_$1/g;       # Subjunctive verb prefix 'be+'
-		s/\b(n\+_)?mi-\+_A/$1mi-+_O/g or	# Removes epenthetic yeh following 'mi+' and before alef madda in stem
-		s/\bb\+_iA/b+_O/g;					# Removes epenthetic yeh following 'be+' and before alef madda in stem
+        s/\b(n\+_)?mi-\+_A/$1mi-+_O/g or  # Removes epenthetic yeh following 'mi+' and before alef madda in stem
+        s/\bb\+_iA/b+_O/g;                # Removes epenthetic yeh following 'be+' and before alef madda in stem
 
 ######## Verb Suffixes & Enclitics ########
         #s/((?:[^+ ]{2}d|[^+ ]{2}[sfCx]t|\bn\+_\S{2,}?|mi\+_\S{2,}?|b\+_\S{2,}?)(?:im|id|nd|m|(?<!A|u)i|d))(CAn|tAn|C)\b/$1_+$2/g;   # Verbal Object verb enclitic
-		s/\b(n\+_\S{1,}?|\S?mi-?\+_\S*?|b\+_\S*?)([OuA])([iI])(im|id|i)(_\+\S+?)?\b/$1$2_+$4$5/g or    # Removes epenthetic yeh/yeh-hamza before Verbal Person suffixes 'im/id/i'
+        s/\b(n\+_\S{1,}?|\S?mi-?\+_\S*?|b\+_\S*?)([OuA])([iI])(im|id|i)(_\+\S+?)?\b/$1$2_+$4$5/g or    # Removes epenthetic yeh/yeh-hamza before Verbal Person suffixes 'im/id/i'
         s/\b(n\+_\S{1,}?|\S?mi-?\+_\S*?|b\+_\S*?)([OuA])i(nd|d|m)(_\+\S+?)?$/$1$2_+$3$4/g or    # Removes epenthetic yeh before Verbal Person suffixes 'm/d/nd'
         s/((?>\S*?)(?:\S{3}(?<!A)d|\S[sfCx]t|mi-?\+_\S{2,}?|\bn\+_(?!mi)\S{2,}?|\bb\+_\S{2,}?))((?<!A)nd|id|im|d|(?<!A|u)i|m)(_\+\S*?)?\b/$1_+$2$3/g;    # Verbal Person verb suffix
         s/(\S{2,}?)(?<!A)d_\+(nd|id|im|d|m)(_\+\S*?)?\b/$1_+d_+$2$3/g or   # Verbal tense suffix 'd' (sans ..._+d_+i  -- see recall section)
@@ -270,9 +270,9 @@ while (<>) {
 
 ##### Noun Section #####
         unless ( $pos_v ) {
-          s/\b([^+ ]{2,}?)([uA])i(CAn|C|tAn|mAn)(_\+.*?)?\b/$1$2_+$3$4/g or # Removes epenthetic yeh before genitive pronominal enclitics
-          s/\b([^+ ]{2,}?)([^uAi+ ])(CAn|(?<!s)tAn)(_\+.*?)?\b/$1$2_+$3$4/g or   # Genitive pronominal enclitics
-          s/\b([^+ ]+?)([Au])i\b/$1$2_+e/g;       # Ezafe preceded by long vowel
+          s/\b([^+ ]{2,}?)([uA])i(CAn|C|tAn|mAn)(_\+.*?)?\b/$1$2_+$3$4/g or     # Removes epenthetic yeh before genitive pronominal enclitics
+          s/\b([^+ ]{2,}?)([^uAi+ ])(CAn|(?<!s)tAn)(_\+.*?)?\b/$1$2_+$3$4/g or  # Genitive pronominal enclitics
+          s/\b([^+ ]+?)([Au])i\b/$1$2_+e/g;                                     # Ezafe preceded by long vowel
 
           ## Plural suffixes.  They're mutually exclusive, so we short circuit when possible
           s/\b([^+ ]{2,}?)-?hA\b/$1_+-hA/g or             # Nominal plural suffix 'hA'
