@@ -10,7 +10,7 @@ use strict;
 #use diagnostics;
 use Getopt::Long;
 
-my $version        = '1.3.9';
+my $version        = '1.3.10';
 my $date           = '2012-08-07';
 my $copyright      = '(c) 2004-2012  Jon Dehdari - GPL v3';
 my $title          = "Perstem: Persian stemmer $version, $date - $copyright";
@@ -251,11 +251,11 @@ while (<>) {
         s/\b(\S+?)([fCxs])tn(C|CAn|tAn|mAn)\b/$1$2_+dn_+$3/g or   # Gerund (infinitive) '+tan' + pronominal enclitic
         s/\b(\S+?)([ruiAnm])dn(C|CAn|tAn|mAn)\b/$1$2_+dn_+$3/g or # Gerund (infinitive) '+dan' + pronominal enclitic
         s/\b(\S{2,}?)([ruiAnm])dn\b/$1$2_+dn/g or                 # Gerund (infinitive) '+dan'
-        s/\b(\S{2,}?)([fCxs])tn\b/$1$2_+dn/g or                   # Gerund (infinitive) '+tan'
+        s/\b(\S{2,}?)([fCxs])tn\b/$1$2_+tn/g or                   # Gerund (infinitive) '+tan'
         s/\b(\S{2,}?)([inuzrbhskCf])ndh\b/$1$2_+ndh/g or          # Present participle '+andeh'
         s/\b(\S{2,}?)([CrnAuimz])dh\b/$1$2_+dh/g or               # Past participle '+deh'
-        s/\b(\S{2,}?)([Cfsx])th\b/$1$2_+dh/g or                   # Past participle '+teh'
-        s/\b(gf|kC|hs|rf|bs)t(h|n)\b/$1_+d$2/g or                 # Short +tan verbs, eg. 'rafteh, goftan' gerund or past participle
+        s/\b(\S{2,}?)([Cfsx])th\b/$1$2_+th/g or                   # Past participle '+teh'
+        s/\b(gf|kC|hs|rf|bs)t(h|n)\b/$1_+t$2/g or                 # Short +tan verbs, eg. 'rafteh, goftan' gerund or past participle
         s/\b(kr|C|bu|dA|z|rsi|br|di|mr|kn|rsAn|ci)d(nd|i|id|m|im)?\b/$1_+d_+$2/g;  # 'shodand/zadand...' simple past - temp. until resolve file works
         s/\b(xuAh|dAr|kn|Cu|bAC)(d|nd|id|i|im|m)\b/$1_+$2/g;      # future/have - temp. until resolve file works
         s/_\+d_\+\B/_+d/g or  # temp. until resolve file works
@@ -620,7 +620,7 @@ xuAhd	xuAh_+d	AUX+3.SG
 Omdh	Om_+dh	V+PSPT
 Ourdh	Our_+dh	V+PSPT
 Ast	Ast	V.3.SG.PRS
-bAxt	bAx_+d	V+PST.3.SG
+bAxt	bAx_+t	V+PST.3.SG
 brdh	br_+dh	V+PSPT
 bud	bu_+d	V+PST.3.SG
 budh	bu_+dh	V+PSPT
@@ -630,42 +630,42 @@ Cdh	C_+dh	V+PSPT
 Cdn	C_+dn	V+GER
 Cud	Cu_+d	V.PRS+3.SG
 Cundh	Cu_+ndh	V.PRS+PRPT
-dACt	dAC_+d	V+PST.3.SG
-dACth	dAC_+dh	V+PSPT
+dACt	dAC_+t	V+PST.3.SG
+dACth	dAC_+th	V+PSPT
 dAdh	dA_+dh	V+PSPT
 dAdn	dA_+dn	V+GER
 dAdnd	dA_+d_+nd	V+PST+3.PL
-dAnst	dAns_+d	V+PST.3.SG
+dAnst	dAns_+t	V+PST.3.SG
 dArd	dAr_+d	V.PRS+3.SG
 dhd	dh_+d	V.PRS+3.SG
 dhndh	dh_+ndh	V.PRS+PRPT
 didn	di_+dn	V+GER
 didh	di_+dh	V+PSPT
 binndh	bin_+ndh	V.PRS+PRPT
-gft	gf_+d	V+PST.3.SG
-gLACt	gLAC_+d	V+PST.3.SG
-gLACth	gLAC_+dh	V+PSPT
-gLCth	gLC_+dh	V+PSPT
-grfth	grf_+dh	V+PSPT
-grft	grf_+d	V+PST.3.SG
-iAft	iAf_+d	V+PST.3.SG
-kCt	kC_+d	V+PST.3.SG
+gft	gf_+t	V+PST.3.SG
+gLACt	gLAC_+t	V+PST.3.SG
+gLACth	gLAC_+th	V+PSPT
+gLCth	gLC_+th	V+PSPT
+grfth	grf_+th	V+PSPT
+grft	grf_+t	V+PST.3.SG
+iAft	iAf_+t	V+PST.3.SG
+kCt	kC_+t	V+PST.3.SG
 knnd	kn_+nd	V.PRS+3.PL
 knndh	kn_+ndh	V.PRS+PRPT
 knd	kn_+d	V.PRS+3.SG
 krdn	kr_+dn	V+GER
 krdh	kr_+dh	V+PSPT
 krdnd	kr_+d_+nd	V	V+PST+3.PL
-hst	hs_+d	V+PST.3.SG
+hst	hs_+t	V+PST.3.SG
 nCdh	n+_C_+dh	V+NEG+PSPT
 nist	n+_Ast	V+NEG+3.SG.PRS
-ntuAnst	ntuAns_+d	V+PST.3.SG
-prdAxt	prdAx_+d	V+PST.3.SG
-rft	rf_+d	V+PST.3.SG
-sAxt	sAx_+d	V+PST.3.SG
-sAxth	sAx_+dh	V+PSPT
-tuAnst	tuAns_+d	V+PST.3.SG
-xuAst	xuAs_+d	V+PST.3.SG
+ntuAnst	ntuAns_+t	V+PST.3.SG
+prdAxt	prdAx_+t	V+PST.3.SG
+rft	rf_+t	V+PST.3.SG
+sAxt	sAx_+t	V+PST.3.SG
+sAxth	sAx_+th	V+PSPT
+tuAnst	tuAns_+t	V+PST.3.SG
+xuAst	xuAs_+t	V+PST.3.SG
 zdh	z_+dh	V+PSPT
 zdn	z_+dn	V+GER
 zdnd	z_+d_+nd	V+PST+3.PL
