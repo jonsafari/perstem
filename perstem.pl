@@ -10,7 +10,7 @@ use strict;
 #use diagnostics;
 use Getopt::Long;
 
-my $version        = '1.3.10';
+my $version        = '1.3.11';
 my $date           = '2012-08-07';
 my $copyright      = '(c) 2004-2012  Jon Dehdari - GPL v3';
 my $title          = "Perstem: Persian stemmer $version, $date - $copyright";
@@ -21,6 +21,8 @@ my $ar_chars       = 'BEqHSTDZLVU';
 #my $longvowel     = 'AuiO';
 ### Temporary placement here
 my $irreg_stems = "O\tOm\nOmuz\tOmux\nAndAz\tAndAx\nbnd\tbs\nbAC\tbu\npz\tpx\npLir\tpLirf\nprdAz\tprdAx\npiund\tpius\ntuAn\ttuAns\nju\tjs\nxuAh\txuAs\ndh\tdA\ndAr\tdAC\ndAn\tdAns\nbin\tdi\nru\trf\nzn\tz\nsAz\tsAx\nspAr\tspr\nCu\tC\nCkn\tCks\nCmAr\tCmr\nCnAs\tCnAx\nCnu\tCni\nfruC\tfrux\nfCAr\tfCr\nkn\tkr\ngLAr\tgLAC\ngLr\tgLC\ngir\tgrf\ngrd\tgC\ngu\tgf\nmir\tmr\nnmA\tnmu\nnuis\tnuC\niAb\tiAf\n";
+## The "+idan and +Adan" verbs are regular going from past to present, but not the other way around (which is what we must do)
+my $semi_reg_stems = "Aft\tAftA\nAist\tAistA\nfrst\tfrstA\nbxC\tbxCi\nprs\tprsi\npic\tpici\ntrs\ttrsi\ncrx\tcrxi\nxr\txri\nrs\trsi\nfhm\tfhmi\nkC\tkCi\nkuC\tkuCi\n";
 
 ### Defaults
 my $pos_sep = '/';
@@ -96,6 +98,7 @@ while (my $resolve = <DATA>) {
 
 ### Open Irregular Verb Stem section
 if ($use_irreg_stems) {
+  $irreg_stems .= $semi_reg_stems;
   my @lines = split "\n", $irreg_stems;
   foreach (@lines) {
     next if m/^#/;
