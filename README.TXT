@@ -34,6 +34,7 @@ Options:
 
 Acknowledgement: Thanks to Jace Livingston, David Zajic, and Corey Miller for their
                  comprehensive error analysis and other suggestions.
+                 Thanks to Jay Ritch for spotting bugs.
 
 
 

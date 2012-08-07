@@ -10,8 +10,8 @@ use strict;
 #use diagnostics;
 use Getopt::Long;
 
-my $version        = '1.3.8';
-my $date           = '2012-08-02';
+my $version        = '1.3.9';
+my $date           = '2012-08-07';
 my $copyright      = '(c) 2004-2012  Jon Dehdari - GPL v3';
 my $title          = "Perstem: Persian stemmer $version, $date - $copyright";
 my ( $dont_stem, $flush, $use_irreg_stems, $no_roman, $pos, $recall, $show_links, $show_only_stem, $skip_comments, $tokenize, $unvowel, $zwnj )  = undef;
@@ -290,7 +290,7 @@ while (<>) {
           s/\b([^+ ]+?)-?trin\b/$1_+trin/g or  # Adjectival superlative suffix, optional ZWNJ
           s/\b([^+ ]+?)-?tr\b/$1_+tr/g or      # Adjectival comparative suffix, optional ZWNJ
           s/\b([^+ ]+?)(?<!A)gi\b/$1h_+i/g or  # Adjectival suffix from stem ending in 'eh'
-          s/\b([^+ ]+?)([iI])i\b/$1_+i/g or # '+i' suffix preceded by 'i' (various meanings)
+          s/\b([^+ ]+?)([iI])i\b/$1_+i/g or    # '+i' suffix preceded by 'i' (various meanings)
           s/([^+ ]+?)e\b/$1_+e/g;              # An ezafe
 
           m/_\+/ and $pos_aj = 1;
@@ -301,9 +301,9 @@ while (<>) {
 ### Increase recall, but lower precision; also contains experimental regexes
         if ( $recall ) {
 ### Verbal ###
-          s/(\S{2,}?)(?<!A)d_\+i(_\+\S+?)?\b/$1_+d_+i$3/g; # Verbal tense suffix 'd' + 2nd person singular 'i'
+          s/(\S{2,}?)(?<!A|\+)d_\+i(_\+\S+?)?\b/$1_+d_+i$3/g;                 # Verbal tense suffix 'd' + 2nd person singular 'i'
           s/\b([^+ ]{2,}?(?:r|(?<![Ai])u|(?<![Au])i|n|m|z))d(?!\s)\b/$1_+d/g; # 3rd person singular past verb - voiced
-          s/\b([^+ ]{2,}?[fCxs])t(?!\s)\b/$1_+t/g;       # 3rd person singular past verb - unvoiced
+          s/\b([^+ ]{2,}?[fCxs])t(?!\s)\b/$1_+t/g;                            # 3rd person singular past verb - unvoiced
 
           # s/\b(n?)([^+ ]{2,}?)((?<=r|u|i|A|n|m|z)d|(?<=f|C|x|s)t)(?!\s)\b/$1+_$2_+$3/g; # 3rd person singular past verb & neg.
           s/(\S{2,}?(?:[^+ ]{2}d|[^+ ]{2}[sfCx]t|\bn\+_\S{2,}?|mi\+_\S{2,}?|b\+_\S{2,}?)(?:im|id|nd|m|(?<!A|u)i|d))mAn\b/$1_+mAn/g;   # Verbal Object verb enclitic +mAn
