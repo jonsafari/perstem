@@ -10,8 +10,8 @@ use strict;
 #use diagnostics;
 use Getopt::Long;
 
-my $version        = '1.3.11';
-my $date           = '2012-08-07';
+my $version        = '1.3.12';
+my $date           = '2012-08-09';
 my $copyright      = '(c) 2004-2012  Jon Dehdari - GPL v3';
 my $title          = "Perstem: Persian stemmer $version, $date - $copyright";
 my ( $dont_stem, $flush, $use_irreg_stems, $no_roman, $pos, $recall, $show_links, $show_only_stem, $skip_comments, $tokenize, $unvowel, $zwnj )  = undef;
@@ -238,7 +238,7 @@ while (<>) {
 
 ######## Verb Prefixes ########
         s/\bn(?![uAi])(\S{2,}?(?:im|id|nd|(?<!A)m|(?<![Aug])i|(?<!A)d|[ruiAnmz]dn|[fCxs]tn)(?:mAn|tAn|CAn|C)?)\b/n+_$1/g; # neg. verb prefix 'n+'
-        s/\b(n\+_)mi-?(?!u|An)(\S{2,}?(?:im|id|nd|(?<!A)m|(?<![Aug])i|(?<!A)d)(?:mAn|tAn|CAn|C)?)\b/$1mi-+_$2/g or  # Imperfective/durative verb prefix 'mi+'
+        s/\b(n\+_)?mi-?(?!u|An)(\S{2,}?(?:im|id|nd|(?<!A)m|(?<![Aug])i|(?<!A)d)(?:mAn|tAn|CAn|C)?)\b/$1mi-+_$2/g or  # Imperfective/durative verb prefix 'mi+'
         s/\bb(?![uAr])([^ ]{2,}?(?:im|id|nd|(?<!A)m|(?<![Auig])i|d)(?:mAn|tAn|CAn|C)?)\b/b+_$1/g;       # Subjunctive verb prefix 'be+'
         s/\b(n\+_)?mi-\+_A/$1mi-+_O/g or  # Removes epenthetic yeh following 'mi+' and before alef madda in stem
         s/\bb\+_iA/b+_O/g;                # Removes epenthetic yeh following 'be+' and before alef madda in stem
