@@ -10,11 +10,11 @@ use strict;
 #use diagnostics;
 use Getopt::Long;
 
-my $version        = '1.3.12';
-my $date           = '2012-08-09';
+my $version        = '1.3.13';
+my $date           = '2012-08-10';
 my $copyright      = '(c) 2004-2012  Jon Dehdari - GPL v3';
 my $title          = "Perstem: Persian stemmer $version, $date - $copyright";
-my ( $dont_stem, $flush, $use_irreg_stems, $no_roman, $pos, $recall, $show_links, $show_only_stem, $skip_comments, $tokenize, $unvowel, $zwnj )  = undef;
+my ( $dict_form, $dont_stem, $flush, $use_irreg_stems, $no_roman, $pos, $recall, $show_infinitival_form, $show_links, $show_only_stem, $skip_comments, $tokenize, $unvowel, $zwnj )  = undef;
 my ( $pos_v, $pos_n, $pos_aj, $pos_other, $before_resolve )  = undef;
 my (%resolve, %irreg_stems) = undef;
 my $ar_chars       = 'BEqHSTDZLVU';
@@ -38,6 +38,7 @@ Function:  Persian (Farsi) stemmer, morphological analyzer, transliterator,
            and partial part-of-speech tagger.
 
 Options:
+      --dict-form        Output words as they appear in a dictionary (shorthand for --irreg-stem --stem --infinitive)
   -d, --nostem           Don't stem -- mostly for character-set conversion
       --flush            Autoflush buffer output after every line
   -h, --help             Print usage
@@ -60,9 +61,11 @@ END_OF_USAGE
 #  -s, --stoplist <file>   Use external stopword list <file>
 
 GetOptions(
+  'dict-form'     => \$dict_form,
   'd|nostem'      => \$dont_stem,
   'flush'         => \$flush,
   'h|help|?'      => sub { print $usage; exit; },
+  'infinitive'    => \$show_infinitival_form,
   'i|input:s'     => \$input_type,
   'irreg-stem'    => \$use_irreg_stems,
   'l|links'       => \$show_links,
@@ -80,12 +83,19 @@ GetOptions(
   'z|zwnj'        => \$zwnj,
   ) or die $usage;
 
+### Postprocess command-line arguments
 $input_type  =~ s/.*1256/cp1256/; # equates win1256 with cp1256
 $output_type =~ s/.*1256/cp1256/; # equates win1256 with cp1256
 $input_type  =~ tr/[A-Z]/[a-z]/;  # recognizes more encoding spelling variants
 $output_type =~ tr/[A-Z]/[a-z]/;  # recognizes more encoding spelling variants
 $input_type  =~ tr/-//;           # eg. UTF-8 & utf8
 $output_type =~ tr/-//;           # eg. UTF-8 & utf8
+
+if ($dict_form) {
+  $use_irreg_stems = 1;
+  $show_only_stem = 1;
+  $show_infinitival_form = 1;
+}
 
 
 ### Open Resolve section
@@ -336,6 +346,19 @@ while (<>) {
       if ( $show_only_stem ) {
         s/\b[^ ]+\+_([^ ]+?)\b/$1/g;  # Removes prefixes
         s/\b([^ ]+?)_\+[^ ]+\b/$1/g;  # Removes suffixes
+      }
+
+### Show verbal infinitival form
+      if ( $show_infinitival_form and $pos_v ) {
+        if (m/\bC\b/) { # Treat shodan differently
+          $_ .= 'dn';
+        }
+        elsif (m/[fsCx]\b/) { # Unvoiced infinitival "+tan"
+          $_ .= 'tn';
+        }
+        else { # Voiced infinitival "+dan"
+          $_ .= 'dn';
+        }
       }
 
     } # ends unless $dont_stem
