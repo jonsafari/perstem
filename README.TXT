@@ -9,10 +9,12 @@ Function:  Persian (Farsi) stemmer, morphological analyzer, transliterator,
            Output is handled similarly.
 
 Options:
+      --dict-form        Output words as they appear in a dictionary (shorthand for --irreg-stem --stem --infinitive)
   -d, --nostem           Don't stem -- mostly for character-set conversion
       --flush            Autoflush buffer output after every line
   -h, --help             Print usage
   -i, --input <type>     Input character encoding type {cp1256,isiri3342,roman,utf8,unihtml}
+      --irreg-stem       Resolve irregular present-tense verb stems to their past-tense stems (eg. kon -> kar)
   -l, --links            Show morphological links.  For example 'mi-xurnd' would appear
                          as 'mi-+_xur_+nd' instead of the default 'mi- xur nd'.
   -n, --noroman          Delete all non-Arabic script characters (eg. HTML tags)
