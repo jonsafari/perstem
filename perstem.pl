@@ -10,7 +10,7 @@ use strict;
 #use diagnostics;
 use Getopt::Long;
 
-my $version        = '1.3.14';
+my $version        = '1.4';
 my $date           = '2012-08-20';
 my $copyright      = '(c) 2004-2012  Jon Dehdari - GPL v3';
 my $title          = "Perstem: Persian stemmer $version, $date - $copyright";
