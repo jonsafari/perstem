@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# Written by Jon Dehdari 2004-2012
+# Written by Jon Dehdari 2004-2013
 # Perstem:  Stemmer and Morphological Parser for Persian
 # The license is the GPL v.3 (www.fsf.org)
 # Usage:  perl perstem.pl [options] < input > output
@@ -10,11 +10,11 @@ use strict;
 #use diagnostics;
 use Getopt::Long;
 
-my $version        = '1.4';
-my $date           = '2012-08-20';
-my $copyright      = '(c) 2004-2012  Jon Dehdari - GPL v3';
+my $version        = '2.0b1';
+my $date           = '2013-01-18';
+my $copyright      = '(c) 2004-2013  Jon Dehdari - GPL v3';
 my $title          = "Perstem: Persian stemmer $version, $date - $copyright";
-my ( $dict_form, $dont_stem, $flush, $use_irreg_stems, $no_roman, $pos, $recall, $show_infinitival_form, $show_links, $show_only_stem, $skip_comments, $tokenize, $unvowel, $zwnj )  = undef;
+my ( $flush, $use_irreg_stems, $no_roman, $pos, $recall, $show_infinitival_form, $show_only_stem, $skip_comments, $tokenize, $unvowel, $zwnj )  = undef;
 my ( $pos_v, $pos_n, $pos_aj, $pos_other, $before_resolve )  = undef;
 my (%resolve, %irreg_stems) = undef;
 my $ar_chars       = 'BEqHSTDZLVU';
@@ -25,9 +25,10 @@ my $irreg_stems = "O\tOm\nOmuz\tOmux\nAndAz\tAndAx\nbnd\tbs\nbAC\tbu\npz\tpx\npL
 my $semi_reg_stems = "Aft\tAftA\nAist\tAistA\nfrst\tfrstA\nbxC\tbxCi\nprs\tprsi\npic\tpici\ntrs\ttrsi\ncrx\tcrxi\nxr\txri\nrs\trsi\nfhm\tfhmi\nkC\tkCi\nkuC\tkuCi\n";
 
 ### Defaults
+my $form = 'dict';
 my $pos_sep = '/';
-my $input_type  = 'roman'; # default is roman input
-my $output_type = 'roman'; # default is roman output
+my $input_type  = 'utf8'; # default input  is UTF-8
+my $output_type = 'utf8'; # default output is UTF-8
 
 my $usage       = <<"END_OF_USAGE";
 ${title}
@@ -38,39 +39,44 @@ Function:  Persian (Farsi) stemmer, morphological analyzer, transliterator,
            and partial part-of-speech tagger.
 
 Options:
-      --dict-form        Output words as they appear in a dictionary (shorthand for --irreg-stem --stem --infinitive)
-  -d, --nostem           Don't stem -- mostly for character-set conversion
-      --flush            Autoflush buffer output after every line
-  -h, --help             Print usage
-  -i, --input <type>     Input character encoding type {cp1256,isiri3342,ncr,roman,utf8}
-      --irreg-stem       Resolve irregular present-tense verb stems to their past-tense stems (eg. kon -> kar)
-  -l, --links            Show morphological links
-  -n, --noroman          Delete all non-Arabic script characters (eg. HTML tags)
-  -o, --output <type>    Output character encoding type {arabtex,cp1256,isiri3342,ncr,roman,utf8}
-  -p, --pos              Tag inflected words for parts of speech
-      --pos-sep <char>   Separate words from their parts of speech by <char> (default: "$pos_sep" )
-  -r, --recall           Increase recall by parsing ambiguous affixes; may lower precision
-      --skip-comments    Skip commented-out lines, without printing them
-  -s, --stem             Return only word stems
-  -t, --tokenize         Tokenize punctuation
-  -u, --unvowel          Remove short vowels
-  -v, --version          Print version ($version)
-  -z, --zwnj             Insert Zero Width Non-Joiners where they should be
+ -f, --form <x>        Output forms as one of the following:
+                         dict: as they appear in a dictionary (default)
+                         all-linked: show all morphemes, linked together
+                         all-unlinked: show all morphemes as separate tokens
+                         untouched: don't stem/analyze; mostly for char-set conversion
+     --flush           Autoflush buffer output after every line
+ -h, --help            Print this usage
+ -i, --input <type>    Input character encoding type {cp1256,isiri3342,ncr,
+                       translit,utf8} (default: $input_type)
+     --irreg-stem      Resolve irregular present-tense verb stems to their
+                       past-tense stems (eg. kon -> kar).
+ -n, --noroman         Delete all non-Arabic script characters (eg. HTML tags)
+ -o, --output <type>   Output character encoding type {arabtex,cp1256,
+                       isiri3342,ncr,translit,utf8} (default: $output_type)
+ -p, --pos             Tag inflected words for parts of speech
+     --pos-sep <char>  Separate words from their parts of speech by <char>
+                       (default: "$pos_sep" )
+ -r, --recall          Increase recall by parsing ambiguous affixes; may lower
+                       precision
+     --skip-comments   Skip commented-out lines, without printing them
+ -s, --stem            Return only word stems
+ -t, --tokenize        Tokenize punctuation
+ -u, --unvowel         Remove short vowels
+ -v, --version         Print version ($version)
+ -z, --zwnj            Insert Zero Width Non-Joiners where they should be
 
 END_OF_USAGE
 #  -s, --stoplist <file>   Use external stopword list <file>
 
 GetOptions(
-  'dict-form'     => \$dict_form,
-  'd|nostem'      => \$dont_stem,
+  'f|form=s'      => \$form,
   'flush'         => \$flush,
   'h|help|?'      => sub { print $usage; exit; },
   'infinitive'    => \$show_infinitival_form,
-  'i|input:s'     => \$input_type,
+  'i|input=s'     => \$input_type,
   'irreg-stem'    => \$use_irreg_stems,
-  'l|links'       => \$show_links,
   'n|noroman'     => \$no_roman,
-  'o|output:s'    => \$output_type,
+  'o|output=s'    => \$output_type,
   'p|pos'         => \$pos,
   'pos-sep:s'     => \$pos_sep,
   'r|recall'      => \$recall,
@@ -91,7 +97,7 @@ $output_type =~ tr/[A-Z]/[a-z]/;  # recognizes more encoding spelling variants
 $input_type  =~ tr/-//;           # eg. UTF-8 & utf8
 $output_type =~ tr/-//;           # eg. UTF-8 & utf8
 
-if ($dict_form) {
+if ($form eq 'dict') {
   $use_irreg_stems = 1;
   $show_only_stem = 1;
   $show_infinitival_form = 1;
@@ -153,9 +159,9 @@ while (<>) {
     s/(\s){2,}/$1/g;               # Removes multiple spaces
   }
 
-### Converts from native script to romanized transliteration
-  if ($input_type ne 'roman') {
-    if ($output_type eq 'roman') {
+### Converts from native script to dehdari transliteration
+  if ($input_type ne 'translit') {
+    if ($output_type eq 'translit') {
       ## Surround contiguous Latin-script blocks with pseudo-quotes
       s/([a-zA-Z01-9~,;?%*\-]+)/˹${1}˺/g;
     }
@@ -189,6 +195,8 @@ while (<>) {
     elsif ($input_type eq 'isiri3342') {
       tr/\xc1\xf8\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc\xcd\xce\xcf\xd0\xd1\xd2\xd3\xd4\xd5\xd6\xd7\xd8\xd9\xda\xdb\xdc\xdd\xde\xdf\xe0\xfe\xf0\xf2\xf1\xc0\xc1\xfc\xda\xe1\xc2\xfb\xfa\xf3\xf6\xac\xbb\xbf\xa5\xe7\xe6\xa1/ABbptVjcHxdLrzJsCSDTZEGfqKglmnuhyaoeO\x7cPkiMIUN~,;?%{}\-/; }
 
+    else { die "Perstem error: unrecognized --input type\n\n" . $usage }
+
   } # if ($input_type)
 
   @_ = split(/(?<!mi)\s+(?!hA|Ai)/); # Tokenize
@@ -219,7 +227,7 @@ while (<>) {
       s/h Ai\b/h-Ai/g;                      # '+h-Ai' (indefinite)
     }
 
-    unless ($dont_stem){ # Do stemming regexes unless $dont_stem is true
+    unless ($form eq 'untouched' ){ # Do full battery of stemming regexes unless told otherwise
 
       ( $pos_v, $pos_n, $pos_aj, $pos_other) = undef;
 
@@ -361,7 +369,7 @@ while (<>) {
         }
       }
 
-    } # ends unless $dont_stem
+    } # ends unless $form eq 'untouched'
 
 ### Show parts of speech
     if ( $pos ) {
@@ -421,7 +429,7 @@ while (<>) {
     } # ends if $pos
 
 ### Deletes word boundaries ' ' from morpheme links '_+'/'+_'
-    unless ( $show_links ) {
+    unless ( $form eq 'all-linked' ) {
       s/_\+0/ /g;  # Removes epenthetic letters
       s/_\+-/ /g;  # Removes suffix links w/ ZWNJs
       s/_\+/ /g;   # Removes all suffix links
@@ -429,8 +437,8 @@ while (<>) {
       s/\+_/ /g;   # Removes all prefix links
     }
 
-### Converts from romanized transliteration to native script
-    if ($output_type ne 'roman') {
+### Converts from dehdari transliteration to native script
+    if ($output_type ne 'translit') {
       if ($output_type eq 'utf8') {
         tr/ABbptVjcHxdLrzJsCSDTZEGfqKglmnuhyaoeOPkiMXIUN~,;?%*\-/اأبپتثجچحخدذرزژسشصضطظعغفقكگلمنوهيَُِآةکیءۀئؤًّ،؛؟٪‍‌/;
       }
@@ -466,6 +474,8 @@ while (<>) {
         #  $_ .= '\\\\'; # Appends LaTeX newline '\\' after each line
       }  # ends elsif (arabtex)
 
+      else { die "Perstem error: unrecognized --output type\n\n" . $usage }
+
       ## Restore temporary Latin doppelgaenger characters to their normal forms
       tr/ⓐ-ⓩⒶ-Ⓩ⓿①-⑨⁆⁓‚;⁇‰⁎‐✢/a-zA-Z01-9~,;?%*\-+/;
 
@@ -477,9 +487,9 @@ while (<>) {
         $full_line .= "$_ ";
       }
 
-    } # ends if ($output_type ne 'roman') -- for non-roman input
+    } # ends if ($output_type ne 'translit') -- for native Perso-Arabic-script input
     elsif ( /[^ \n]/ ) { # if latin-script line is non-empty
-      if ($input_type ne 'roman') {
+      if ($input_type ne 'translit') {
         ## Deal with latin-script strings from arabic-script input
         tr/ⓐ-ⓩⒶ-Ⓩ⓿①-⑨⁆⁓‚;⁇‰⁎‐✢/a-zA-Z01-9~,;?%*\-+/;
       }
