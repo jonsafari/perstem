@@ -15,12 +15,12 @@ my $date           = '2013-01-25';
 my $copyright      = '(c) 2004-2013  Jon Dehdari - GPL v3';
 my $title          = "Perstem: Persian stemmer $version, $date - $copyright";
 my ( $flush, $use_irreg_stems, $no_roman, $pos, $recall, $show_infinitival_form, $show_only_stem, $skip_comments, $tokenize, $unvowel, $zwnj )  = undef;
-my ( $pos_v, $pos_n, $pos_aj, $pos_other, $before_resolve )  = undef;
+my ( $pos_aj, $pos_aux, $pos_n, $pos_v, $pos_other, $before_resolve )  = undef;
 my (%resolve, %irreg_stems) = undef;
 my $ar_chars       = 'BEqHSTDZLVU';
 #my $longvowel     = 'AuiO';
 ### Temporary placement here
-my $irreg_stems = "O\tOm\nOmuz\tOmux\nAndAz\tAndAx\nbnd\tbs\nbAC\tbu\npz\tpx\npLir\tpLirf\nprdAz\tprdAx\npiund\tpius\ntuAn\ttuAns\nju\tjs\nxuAh\txuAs\ndh\tdA\ndAr\tdAC\ndAn\tdAns\nbin\tdi\nru\trf\nzn\tz\nsAz\tsAx\nspAr\tspr\nCu\tC\nCkn\tCks\nCmAr\tCmr\nCnAs\tCnAx\nCnu\tCni\nfruC\tfrux\nfCAr\tfCr\nkn\tkr\ngLAr\tgLAC\ngLr\tgLC\ngir\tgrf\ngrd\tgC\ngu\tgf\nmir\tmr\nnmA\tnmu\nnuis\tnuC\niAb\tiAf\n";
+my $irreg_stems = "O\tOm\nOmuz\tOmux\nAndAz\tAndAx\nAst\tbu\nbA\tbAis\nbnd\tbs\nbAC\tbu\npz\tpx\npLir\tpLirf\nprdAz\tprdAx\npiund\tpius\ntuAn\ttuAns\nju\tjs\nxuAh\txuAs\ndh\tdA\ndAr\tdAC\ndAn\tdAns\nbin\tdi\nru\trf\nzn\tz\nsAz\tsAx\nspAr\tspr\nCA\tCAis\nCu\tC\nCkn\tCks\nCmAr\tCmr\nCnAs\tCnAx\nCnu\tCni\nfruC\tfrux\nfCAr\tfCr\nkn\tkr\ngLAr\tgLAC\ngLr\tgLC\ngir\tgrf\ngrd\tgC\ngu\tgf\nmir\tmr\nnmA\tnmu\nnuis\tnuC\niAb\tiAf\n";
 ## The "+idan and +Adan" verbs are regular going from past to present, but not the other way around (which is what we must do)
 my $semi_reg_stems = "Aft\tAftA\nAist\tAistA\nfrst\tfrstA\nbxC\tbxCi\nprs\tprsi\npic\tpici\ntrs\ttrsi\ncrx\tcrxi\nxr\txri\nrs\trsi\nfhm\tfhmi\nkC\tkCi\nkuC\tkuCi\n";
 
@@ -211,8 +211,8 @@ while (<>) {
     }
 
     if ( $unvowel ) {
+      s/\bA/O/g;       # Changes long 'aa' at beginning of word to alef madda
       s/\b([aeo])/A/g; # Inserts alef before words that begin with short vowel
-      s/\bA/]/g;       # Changes long 'aa' at beginning of word to alef madda
       s/[aeo~]//g;     # Finally, removes all other short vowels and tashdids
     }
 
@@ -229,17 +229,18 @@ while (<>) {
 
     unless ($form eq 'untouched' ){ # Do full battery of stemming regexes unless told otherwise
 
-      ( $pos_v, $pos_n, $pos_aj, $pos_other) = undef;
+      ( $pos_aj, $pos_aux, $pos_n, $pos_v, $pos_other) = undef;
 
       if ( $resolve{$_} ) { # word is found in Resolve section
         if ($pos or $use_irreg_stems) {
           my $cached_pos_full  = $resolve{$_}[1];
           if ($cached_pos_full) { # Some entries don't have a part-of-speech
-            my $cached_pos_basic = substr($cached_pos_full, 0, 1);
+            $cached_pos_full =~ m/^([A-Z]+)/  and my $cached_pos_basic = $1;
 
-            if    ($cached_pos_basic eq 'N') { $pos_n  = 1; }
-            elsif ($cached_pos_basic eq 'V') { $pos_v  = 1; }
-            elsif ($cached_pos_basic eq 'A') { $pos_aj = 1; }
+            if ($cached_pos_basic eq 'A')      { $pos_aj  = 1; }
+            elsif ($cached_pos_basic eq 'AUX') { $pos_aux = 1; }
+            elsif ($cached_pos_basic eq 'N')   { $pos_n   = 1; }
+            elsif ($cached_pos_basic eq 'V')   { $pos_v   = 1; }
             else  {$pos_other = 1;}
           }
         }
@@ -343,7 +344,7 @@ while (<>) {
 
 
 ### Resolve irregular present-tense verb stem to their past-tense stem
-      if ($pos_v and $use_irreg_stems) {
+      if (($pos_v or $pos_aux) and $use_irreg_stems) {
         my $stem = $_;
         $stem =~ s/\b[^ ]+\+_([^ ]+?)\b/$1/g;  # Removes prefixes
         $stem =~ s/\b([^ ]+?)_\+[^ ]+\b/$1/g;  # Removes suffixes
@@ -357,7 +358,7 @@ while (<>) {
       }
 
 ### Show verbal infinitival form
-      if ( $show_infinitival_form and $pos_v ) {
+      if (($pos_v or $pos_aux) and $show_infinitival_form) {
         if (m/^C$/) { # Treat shodan differently
           $_ .= 'dn';
         }
@@ -521,7 +522,7 @@ bA	bA	P
 tA	tA	P
 bi	bi	P
 br	br	P
-br	br	P
+brAi	brAi	P
 rui	ru_+e	P+EZ
 Hti	Hti	P
 sui	su_+e	P+EZ
@@ -566,7 +567,8 @@ nmAindh	nmAindh	N
 prundh	prundh	N
 xndh	xndh	N
 bzrgi	bzrg_+i	N+ATTR
-biCtr	biCtr	A
+bEid	bEid	A
+biCtr	biC	A
 digr	digr	A
 nhAii	nhAii	A
 nhAIi	nhAii	A
@@ -653,6 +655,8 @@ trA	tu rA
 cist	ch Ast
 kjAst	kjA Ast
 xuAhd	xuAh_+d	AUX+3.SG
+bAid	bA_+d	AUX+3.SG
+CAid	CA_+d	AUX+3.SG
 Omdh	Om_+dh	V+PSPT
 Ourdh	Our_+dh	V+PSPT
 Ast	Ast	V.3.SG.PRS
