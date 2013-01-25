@@ -10,8 +10,8 @@ use strict;
 #use diagnostics;
 use Getopt::Long;
 
-my $version        = '2.0b1';
-my $date           = '2013-01-18';
+my $version        = '2.0';
+my $date           = '2013-01-25';
 my $copyright      = '(c) 2004-2013  Jon Dehdari - GPL v3';
 my $title          = "Perstem: Persian stemmer $version, $date - $copyright";
 my ( $flush, $use_irreg_stems, $no_roman, $pos, $recall, $show_infinitival_form, $show_only_stem, $skip_comments, $tokenize, $unvowel, $zwnj )  = undef;
