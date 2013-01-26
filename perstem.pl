@@ -10,7 +10,7 @@ use strict;
 #use diagnostics;
 use Getopt::Long;
 
-my $version        = '2.0';
+my $version        = '2.1b1';
 my $date           = '2013-01-25';
 my $copyright      = '(c) 2004-2013  Jon Dehdari - GPL v3';
 my $title          = "Perstem: Persian stemmer $version, $date - $copyright";
@@ -20,7 +20,7 @@ my (%resolve, %irreg_stems) = undef;
 my $ar_chars       = 'BEqHSTDZLVU';
 #my $longvowel     = 'AuiO';
 ### Temporary placement here
-my $irreg_stems = "O\tOm\nOmuz\tOmux\nAndAz\tAndAx\nAst\tbu\nbA\tbAis\nbnd\tbs\nbAC\tbu\npz\tpx\npLir\tpLirf\nprdAz\tprdAx\npiund\tpius\ntuAn\ttuAns\nju\tjs\nxuAh\txuAs\ndh\tdA\ndAr\tdAC\ndAn\tdAns\nbin\tdi\nru\trf\nzn\tz\nsAz\tsAx\nspAr\tspr\nCA\tCAis\nCu\tC\nCkn\tCks\nCmAr\tCmr\nCnAs\tCnAx\nCnu\tCni\nfruC\tfrux\nfCAr\tfCr\nkn\tkr\ngLAr\tgLAC\ngLr\tgLC\ngir\tgrf\ngrd\tgC\ngu\tgf\nmir\tmr\nnmA\tnmu\nnuis\tnuC\niAb\tiAf\n";
+my $irreg_stems = "O\tOm\nOmuz\tOmux\nAndAz\tAndAx\nAst\tbu\nbA\tbAis\nbnd\tbs\nbAC\tbu\npz\tpx\npLir\tpLirf\nprdAz\tprdAx\npiund\tpius\ntuAn\ttuAns\nju\tjs\nxuAh\txuAs\ndh\tdA\ndAr\tdAC\ndAn\tdAns\nbin\tdi\nru\trf\nzn\tz\nsAz\tsAx\nspAr\tspr\nCA\tCAis\nCu\tC\nCkn\tCks\nCmAr\tCmr\nCnAs\tCnAx\nCnu\tCni\nfruC\tfrux\nfCAr\tfCr\nkn\tkr\ngLAr\tgLAC\ngLr\tgLC\ngir\tgrf\ngrd\tgC\ngu\tgf\nmir\tmr\nnmA\tnmu\nnuis\tnuC\nhs\tbu\niAb\tiAf\n";
 ## The "+idan and +Adan" verbs are regular going from past to present, but not the other way around (which is what we must do)
 my $semi_reg_stems = "Aft\tAftA\nAist\tAistA\nfrst\tfrstA\nbxC\tbxCi\nprs\tprsi\npic\tpici\ntrs\ttrsi\ncrx\tcrxi\nxr\txri\nrs\trsi\nfhm\tfhmi\nkC\tkCi\nkuC\tkuCi\n";
 
@@ -278,7 +278,7 @@ while (<>) {
         s/\b(\S{2,}?)([CrnAuimz])dh\b/$1$2_+dh/g or               # Past participle '+deh'
         s/\b(\S{2,}?)([Cfsx])th\b/$1$2_+th/g or                   # Past participle '+teh'
         s/\b(gf|kC|hs|rf|bs)t(h|n)\b/$1_+t$2/g or                 # Short +tan verbs, eg. 'rafteh, goftan' gerund or past participle
-        s/\b(kr|C|bu|dA|z|rsi|br|di|mr|kn|rsAn|ci)d(nd|i|id|m|im)?\b/$1_+d_+$2/g;  # 'shodand/zadand...' simple past - temp. until resolve file works
+        s/\b(kr|C|bu|dA|z|rsi|br|di|kn|rsAn|ci)d(nd|i|id|m|im)?\b/$1_+d_+$2/g;  # 'shodand/zadand...' simple past - temp. until resolve file works
         s/\b(xuAh|dAr|kn|Cu|bAC)(d|nd|id|i|im|m)\b/$1_+$2/g;      # future/have - temp. until resolve file works
         s/_\+d_\+\B/_+d/g or  # temp. until resolve file works
         s/_\+t_\+\B/_+t/g;    # temp. until resolve file works
@@ -564,6 +564,8 @@ pAiAn	pAiAn	N
 miAn	miAn	N
 frmAndh	frmAndh	N
 nmAindh	nmAindh	N
+nmAiC	nmAiC	N
+nuisndh	nuisndh	N
 prundh	prundh	N
 xndh	xndh	N
 bzrgi	bzrg_+i	N+ATTR
@@ -612,7 +614,7 @@ zbAnhA	zbAn_+hA	N+PL
 kCurhAi	kCur_+hA_+e	N+PL+EZ
 kCurhA	kCur_+hA	N+PL
 tBsisAt	tBsis_+At	N+PL
-mrdm	mrd_+m	N
+mrdm	mrdm	N
 dftr	dftr	N
 dfAtr	dftr	N
 dktr	dktr	N
