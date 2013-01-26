@@ -10,7 +10,7 @@ use strict;
 #use diagnostics;
 use Getopt::Long;
 
-my $version        = '2.1b1';
+my $version        = '2.1b2';
 my $date           = '2013-01-25';
 my $copyright      = '(c) 2004-2013  Jon Dehdari - GPL v3';
 my $title          = "Perstem: Persian stemmer $version, $date - $copyright";
@@ -267,8 +267,9 @@ while (<>) {
         s/\b(n\+_\S{1,}?|\S?mi-?\+_\S*?|b\+_\S*?)([uAO])([iI])(im|id|i)(_\+\S+?)?\b/$1$2_+$4$5/g or    # Removes epenthetic yeh/yeh-hamza before Verbal Person suffixes 'im/id/i'
         s/\b(n\+_\S{1,}?|\S?mi-?\+_\S*?|b\+_\S*?)([AuO])i(nd|d|m)(_\+\S+?)?$/$1$2_+$3$4/g or    # Removes epenthetic yeh before Verbal Person suffixes 'm/d/nd'
         s/((?>\S*?)(?:\S{3}(?<!A)d|\S[sfCx]t|mi-?\+_\S{2,}?|\bn\+_(?!mi)\S{2,}?|\bb\+_\S{2,}?))((?<!A)nd|id|im|d|(?<![Aug])i|m)(_\+\S*?)?\b/$1_+$2$3/g;    # Verbal Person verb suffix
-        s/(\S{2,}?)(?<!A)d_\+(nd|id|im|d|m)(_\+\S*?)?\b/$1_+d_+$2$3/g or   # Verbal tense suffix 'd' (sans ..._+d_+i  -- see recall section)
-        s/(\S+?)([sfCx])t_\+(nd|id|im|d|i|m)(_\+\S*?)?\b/$1$2_+t_+$3$4/g;  # Verbal tense suffix 't'
+        s/(\S{2,}?)(?<!A)d_\+(nd|id|im|d|m)(_\+\S*?)?\b/$1_+d_+$2$3/g or    # Verbal tense suffix 'd' (sans ..._+d_+i  -- see recall section);  one exception that breaks on this is mi-dAdnd etc
+        s/(\S+?)([sfCx])t_\+(nd|id|im|d|i|m)(_\+\S*?)?\b/$1$2_+t_+$3$4/g or # Verbal tense suffix 't'
+        s/(\S{2,}?dA)d_\+(nd|id|im|m)(_\+\S*?)?\b/$1_+d_+$2$3/g;            # Verbal tense suffix 'd' for mi-dAdnd etc.  This class of words are very tricky to get right, without recognizing non-verbs
 
         s/\b(\S+?)([fCxs])tn(C|CAn|tAn|mAn)\b/$1$2_+dn_+$3/g or   # Gerund (infinitive) '+tan' + pronominal enclitic
         s/\b(\S+?)([ruiAnm])dn(C|CAn|tAn|mAn)\b/$1$2_+dn_+$3/g or # Gerund (infinitive) '+dan' + pronominal enclitic
@@ -677,6 +678,8 @@ dACth	dAC_+th	V+PSPT
 dAdh	dA_+dh	V+PSPT
 dAdn	dA_+dn	V+GER
 dAdnd	dA_+d_+nd	V+PST+3.PL
+midAd	mi-+_dA_+d	V+IPFV+PST.3.SG
+mi-dAd	mi-+_dA_+d	V+IPFV+PST.3.SG
 dAnst	dAns_+t	V+PST.3.SG
 dArd	dAr_+d	V.PRS+3.SG
 dhd	dh_+d	V.PRS+3.SG
