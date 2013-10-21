@@ -10,8 +10,8 @@ use strict;
 #use diagnostics;
 use Getopt::Long;
 
-my $version        = '2.1b2';
-my $date           = '2013-01-25';
+my $version        = '2.2';
+my $date           = '2013-10-21';
 my $copyright      = '(c) 2004-2013  Jon Dehdari - GPL v3';
 my $title          = "Perstem: Persian stemmer $version, $date - $copyright";
 my ( $flush, $use_irreg_stems, $no_roman, $pos, $recall, $show_infinitival_form, $show_only_stem, $skip_comments, $tokenize, $unvowel, $zwnj )  = undef;
@@ -27,8 +27,11 @@ my $semi_reg_stems = "Aft\tAftA\nAist\tAistA\nfrst\tfrstA\nbxC\tbxCi\nprs\tprsi\
 ### Defaults
 my $form = 'dict';
 my $pos_sep = '/';
-my $input_type  = 'utf8'; # default input  is UTF-8
-my $output_type = 'utf8'; # default output is UTF-8
+my $input_type   = 'utf8'; # default input  is UTF-8
+my $output_type  = 'utf8'; # default output is UTF-8
+$tokenize        = 1;
+$use_irreg_stems = 1;
+$zwnj            = 1;
 
 my $usage       = <<"END_OF_USAGE";
 ${title}
@@ -39,31 +42,31 @@ Function:  Persian (Farsi) stemmer, morphological analyzer, transliterator,
            and partial part-of-speech tagger.
 
 Options:
- -f, --form <x>        Output forms as one of the following:
-                         dict: as they appear in a dictionary (default)
-                         all-linked: show all morphemes, linked together
-                         all-unlinked: show all morphemes as separate tokens
-                         untouched: don't stem/analyze; mostly for char-set conversion
-     --flush           Autoflush buffer output after every line
- -h, --help            Print this usage
- -i, --input <type>    Input character encoding type {cp1256,isiri3342,ncr,
-                       translit,utf8} (default: $input_type)
-     --irreg-stem      Resolve irregular present-tense verb stems to their
-                       past-tense stems (eg. kon -> kar).
- -n, --noroman         Delete all non-Arabic script characters (eg. HTML tags)
- -o, --output <type>   Output character encoding type {arabtex,cp1256,
-                       isiri3342,ncr,translit,utf8} (default: $output_type)
- -p, --pos             Tag inflected words for parts of speech
-     --pos-sep <char>  Separate words from their parts of speech by <char>
-                       (default: "$pos_sep" )
- -r, --recall          Increase recall by parsing ambiguous affixes; may lower
-                       precision
-     --skip-comments   Skip commented-out lines, without printing them
- -s, --stem            Return only word stems
- -t, --tokenize        Tokenize punctuation
- -u, --unvowel         Remove short vowels
- -v, --version         Print version ($version)
- -z, --zwnj            Insert Zero Width Non-Joiners where they should be
+ -f, --form <x>         Output forms as one of the following:
+                          dict: as they appear in a dictionary (default)
+                          linked: show all morphemes, linked together
+                          unlinked: show all morphemes as separate tokens
+                          untouched: don't stem/analyze; mostly for char-set conversion
+     --flush            Autoflush buffer output after every line
+ -h, --help             Print this usage
+ -i, --input <type>     Input character encoding type {cp1256,isiri3342,ncr,
+                        translit,utf8} (default: $input_type)
+     --irreg-stem {0|1} Resolve irregular present-tense verb stems to their
+                        past-tense stems (eg. kon -> kar).  (default: 1 == true)
+ -n, --noroman          Delete all non-Arabic script characters (eg. HTML tags)
+ -o, --output <type>    Output character encoding type {arabtex,cp1256,
+                        isiri3342,ncr,translit,utf8} (default: $output_type)
+ -p, --pos              Tag inflected words for parts of speech
+     --pos-sep <char>   Separate words from their parts of speech by <char>
+                        (default: "$pos_sep" )
+ -r, --recall           Increase recall by parsing ambiguous affixes; may lower
+                        precision
+     --skip-comments    Skip commented-out lines, without printing them
+ -s, --stem             Return only word stems
+ -t, --tokenize {0|1}   Tokenize punctuation (default: 1 == true)
+ -u, --unvowel          Remove short vowels
+ -v, --version          Print version ($version)
+ -z, --zwnj {0|1}       Insert Zero Width Non-Joiners where they should be (default: 1 == true)
 
 END_OF_USAGE
 #  -s, --stoplist <file>   Use external stopword list <file>
@@ -74,7 +77,7 @@ GetOptions(
   'h|help|?'      => sub { print $usage; exit; },
   'infinitive'    => \$show_infinitival_form,
   'i|input=s'     => \$input_type,
-  'irreg-stem'    => \$use_irreg_stems,
+  'irreg-stem=i'  => \$use_irreg_stems,
   'n|noroman'     => \$no_roman,
   'o|output=s'    => \$output_type,
   'p|pos'         => \$pos,
@@ -83,10 +86,10 @@ GetOptions(
   'skip-comments' => \$skip_comments,
 #  's|stoplist:s'  => \$resolve_file,
   's|stem'        => \$show_only_stem,
-  't|tokenize'    => \$tokenize,
+  't|tokenize=i'  => \$tokenize,
   'u|unvowel'     => \$unvowel,
   'v|version'     => sub { print "$version\n"; exit; },
-  'z|zwnj'        => \$zwnj,
+  'z|zwnj=i'      => \$zwnj,
   ) or die $usage;
 
 ### Postprocess command-line arguments
@@ -266,7 +269,7 @@ while (<>) {
         #s/((?:[^+ ]{2}d|[^+ ]{2}[sfCx]t|\bn\+_\S{2,}?|mi\+_\S{2,}?|b\+_\S{2,}?)(?:im|id|nd|m|(?<!A|u)i|d))(CAn|tAn|C)\b/$1_+$2/g;   # Verbal Object verb enclitic
         s/\b(n\+_\S{1,}?|\S?mi-?\+_\S*?|b\+_\S*?)([uAO])([iI])(im|id|i)(_\+\S+?)?\b/$1$2_+$4$5/g or    # Removes epenthetic yeh/yeh-hamza before Verbal Person suffixes 'im/id/i'
         s/\b(n\+_\S{1,}?|\S?mi-?\+_\S*?|b\+_\S*?)([AuO])i(nd|d|m)(_\+\S+?)?$/$1$2_+$3$4/g or    # Removes epenthetic yeh before Verbal Person suffixes 'm/d/nd'
-        s/((?>\S*?)(?:\S{3}(?<!A)d|\S[sfCx]t|mi-?\+_\S{2,}?|\bn\+_(?!mi)\S{2,}?|\bb\+_\S{2,}?))((?<!A)nd|id|im|d|(?<![Aug])i|m)(_\+\S*?)?\b/$1_+$2$3/g;    # Verbal Person verb suffix
+        s/((?>\S*?)(?:\S{3}(?<!A)d|\S[sfCx]t|mi-?\+_\S{2,}?|\bn\+_(?!mi)\S{2,}?|\bb\+_\S{2,}?))((?<!A)nd|id|im|d|(?<![Augd])i|m)(_\+\S*?)?\b/$1_+$2$3/g;    # Verbal Person verb suffix
         s/(\S{2,}?)(?<!A)d_\+(nd|id|im|d|m)(_\+\S*?)?\b/$1_+d_+$2$3/g or    # Verbal tense suffix 'd' (sans ..._+d_+i  -- see recall section);  one exception that breaks on this is mi-dAdnd etc
         s/(\S+?)([sfCx])t_\+(nd|id|im|d|i|m)(_\+\S*?)?\b/$1$2_+t_+$3$4/g or # Verbal tense suffix 't'
         s/(\S{2,}?dA)d_\+(nd|id|im|m)(_\+\S*?)?\b/$1_+d_+$2$3/g;            # Verbal tense suffix 'd' for mi-dAdnd etc.  This class of words are very tricky to get right, without recognizing non-verbs
@@ -366,6 +369,9 @@ while (<>) {
         elsif (m/[fsCx]$/) { # Unvoiced infinitival "+tan"
           $_ .= 'tn';
         }
+        elsif (m/d$/) { # Verb stem ends in 'd' (eg 'mi-dAdi')
+          $_ .= 'n';
+        }
         else { # Voiced infinitival "+dan"
           $_ .= 'dn';
         }
@@ -431,7 +437,7 @@ while (<>) {
     } # ends if $pos
 
 ### Deletes word boundaries ' ' from morpheme links '_+'/'+_'
-    unless ( $form eq 'all-linked' ) {
+    unless ( $form eq 'linked' ) {
       s/_\+0/ /g;  # Removes epenthetic letters
       s/_\+-/ /g;  # Removes suffix links w/ ZWNJs
       s/_\+/ /g;   # Removes all suffix links
@@ -576,6 +582,7 @@ digr	digr	A
 nhAii	nhAii	A
 nhAIi	nhAii	A
 frxndh	frxndh	A
+milAdi	milAdi	A
 Oindh	O_+ndh	A+PRPT
 frhngi	frhngi
 tnhA	tnhA
