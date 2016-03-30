@@ -44,5 +44,10 @@ encoding.  Output is handled similarly.
 Thanks to Jace Livingston, David Zajic, and Corey Miller for their comprehensive error
 analysis and other suggestions.  Thanks to Jay Ritch and Artyom Lukanin for spotting bugs.
 
-## License
-(c) 2004-2013  Jon Dehdari - GPL v.3.  See LICENSE.TXT for full text.
+
+## Citation
+If you use this software please cite the following
+
+Dehdari, Jon, and Deryle Lonsdale. 2008. A link grammar parser for Persian. In Karimi, S., Samiian, V., and Stilo, D., editors, *Aspects of Iranian Linguistics*, volume 1. Cambridge Scholars Press. ISBN: 978-18-471-8639-3 ([BibTeX](http://jon.dehdari.org/pubs/bib/dehdarilonsdale2005.bib.txt))
+
+Jadidinejad, Amir Hossein, Fariborz Mahmoudi, and Jon Dehdari. 2010. Evaluation of Perstem: A Simple and Efficient Stemming Algorithm for Persian. In Peters, C., Nunzio, G. D., Kurimo, M., Mandl, T., Mostefa, D., Peñas, A., and Roda, G., editors, *Multilingual Information Access Evaluation I. Text Retrieval Experiments*, volume 6241 of Lecture Notes in Computer Science, pages 98–101. Springer, Heidelberg. ([BibTeX](http://jon.dehdari.org/pubs/bib/jadidi-etal2010.bib.txt))
